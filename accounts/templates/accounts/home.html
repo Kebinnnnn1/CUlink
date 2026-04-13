@@ -1,0 +1,701 @@
+{% extends 'accounts/base.html' %}
+{% block title %}CUlink — Chat, Share & Connect Across Cebu Universities{% endblock %}
+{% block meta_description %}CUlink connects Cebu university students through real-time private chat, a shared Knowledge Wall, and instant file conversion — all free, all in your browser.{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ─── Hero ─── */
+  .hero {
+    background: var(--bg);
+    padding: 6rem 0 5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    padding: 0.4rem 1rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-light);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    animation: fadeInLeft 0.6s ease both;
+  }
+
+  [data-theme="dark"] .hero-eyebrow {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.14);
+    color: rgba(255,255,255,0.6);
+  }
+
+  .hero-eyebrow .live-dot {
+    width: 7px; height: 7px;
+    background: var(--pink);
+    border-radius: 50%;
+    animation: pulse-dot 1.8s infinite;
+    flex-shrink: 0;
+  }
+
+  .hero-title {
+    font-size: clamp(2.8rem, 6vw, 5rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -2px;
+    color: var(--text-dark);
+    margin-bottom: 1.5rem;
+    animation: fadeInLeft 0.7s 0.05s ease both;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    color: var(--pink);
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-mid);
+    line-height: 1.7;
+    max-width: 500px;
+    margin-bottom: 2.5rem;
+    animation: fadeInLeft 0.7s 0.1s ease both;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    animation: fadeInLeft 0.7s 0.15s ease both;
+    margin-bottom: 3rem;
+  }
+
+  .btn-hero-pink {
+    background: var(--pink);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    padding: 0.85rem 2.2rem;
+    font-size: 0.95rem;
+    transition: background 0.2s, transform 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .btn-hero-pink:hover {
+    background: var(--pink-dark);
+    color: #fff;
+    transform: translateY(-2px);
+  }
+
+  .btn-hero-outline {
+    background: transparent;
+    color: var(--text-mid);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    padding: 0.85rem 2.2rem;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+  }
+
+  .btn-hero-outline:hover {
+    border-color: var(--text-dark);
+    color: var(--text-dark);
+    transform: translateY(-1px);
+  }
+
+  [data-theme="dark"] .btn-hero-outline {
+    color: rgba(255,255,255,0.6);
+    border-color: rgba(255,255,255,0.2);
+  }
+  [data-theme="dark"] .btn-hero-outline:hover {
+    border-color: rgba(255,255,255,0.5);
+    color: #fff;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    animation: fadeInLeft 0.7s 0.2s ease both;
+  }
+
+  .hero-stat-num {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1;
+  }
+
+  .hero-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-top: 0.2rem;
+  }
+
+  /* Dashboard mockup — always dark regardless of theme */
+  .hero-mockup {
+    background: #1a1a1f;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    animation: fadeInRight 0.8s 0.2s ease both;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .mockup-bar {
+    background: rgba(255,255,255,0.07);
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+
+  .m-dot { width: 9px; height: 9px; border-radius: 50%; }
+
+  .mockup-body { padding: 1.5rem; }
+
+  .mock-stat-row { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
+
+  .mock-stat {
+    flex: 1;
+    background: rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .mock-stat .ms-label { font-size: 0.68rem; color: rgba(255,255,255,0.4); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+  .mock-stat .ms-val   { font-size: 1.25rem; font-weight: 700; color: #fff; }
+  .mock-stat .ms-delta { font-size: 0.7rem; font-weight: 600; color: var(--pink); margin-top: 0.1rem; }
+
+  .mock-chat-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.3); letter-spacing: 0.07em; margin-bottom: 0.5rem; }
+
+  .mock-bubble-in {
+    display: flex; gap: 8px; align-items: flex-end; margin-bottom: 0.5rem;
+  }
+  .mock-av {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--pink); color: #fff;
+    font-size: 0.6rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .bubble-text-in {
+    background: rgba(255,255,255,0.09);
+    border-radius: 12px 12px 12px 3px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.8);
+    max-width: 80%;
+  }
+  .mock-bubble-out { display: flex; justify-content: flex-end; margin-bottom: 0.5rem; }
+  .bubble-text-out {
+    background: var(--pink);
+    border-radius: 12px 12px 3px 12px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem; color: #fff; max-width: 80%;
+  }
+
+  /* ─── Strip ─── */
+  .feature-strip {
+    padding: 1.25rem 0;
+    background: var(--bg-white);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .strip-inner {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    white-space: nowrap;
+    animation: marquee 20s linear infinite;
+  }
+
+  .strip-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-mid);
+    flex-shrink: 0;
+  }
+
+  .strip-item i { color: var(--pink); }
+
+  /* ─── Feature Blocks ─── */
+  .features-intro {
+    padding: 5rem 0 2rem;
+  }
+
+  .feature-grid {
+    padding: 2rem 0 5rem;
+  }
+
+  .feat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    height: 100%;
+    transition: transform 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .feat-card.pink-accent { background: rgba(255,63,164,0.08); }
+  .feat-card.purple-accent { background: rgba(100,100,200,0.1); }
+
+  [data-theme="dark"] .feat-card.purple-accent { background: rgba(100,100,220,0.15); }
+
+  .feat-icon {
+    width: 48px; height: 48px;
+    background: rgba(0,0,0,0.07);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .feat-card.pink-accent .feat-icon { background: rgba(255,63,164,0.15); color: var(--pink); }
+  .feat-card.purple-accent .feat-icon  { background: rgba(100,100,220,0.15); color: #5555cc; }
+
+  .feat-card h5 {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.6rem;
+    color: var(--text-dark);
+  }
+
+  .feat-card p {
+    color: var(--text-mid);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .feat-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-dark);
+    text-decoration: none;
+    margin-top: 1.25rem;
+  }
+
+  .feat-link:hover { color: var(--pink); }
+
+  /* ─── Big Feature Panels ─── */
+  .big-panel-dark {
+    background: var(--bg-dark);
+    color: #fff;
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+  }
+
+  .big-panel-dark .bp-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .big-panel-dark h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .big-panel-dark h3 span { color: var(--pink); }
+
+  .big-panel-dark p { color: rgba(255,255,255,0.55); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.5rem; }
+
+  .big-panel-light {
+    background: var(--bg-card-alt);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+  }
+
+  .big-panel-light .bp-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-light);
+    margin-bottom: 0.75rem;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .big-panel-light h3 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 0.75rem; line-height: 1.2; color: var(--text-dark); }
+  .big-panel-light p  { color: var(--text-mid); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.5rem; }
+
+  /* ─── CTA Section ─── */
+  .cta-wrap {
+    background: var(--bg-dark);
+    padding: 6rem 0;
+    text-align: center;
+  }
+
+  .cta-wrap h2 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -1.5px;
+    margin-bottom: 1rem;
+  }
+
+  .cta-wrap p { color: rgba(255,255,255,0.5); font-size: 1.05rem; margin-bottom: 2rem; }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 991px) {
+    .hero { padding: 4rem 0 3.5rem; }
+    .hero-title { font-size: 3rem; }
+    .hero-mockup { display: none; }
+  }
+
+  @media (max-width: 767px) {
+    .hero { padding: 3rem 0 2.5rem; }
+    .hero-title { font-size: 2.4rem; letter-spacing: -1px; }
+    .hero-subtitle { font-size: 0.95rem; }
+    .hero-actions { flex-direction: column; gap: 0.6rem; }
+    .hero-actions a { justify-content: center; text-align: center; }
+    .hero-stats { gap: 1.5rem; }
+    .big-panel-dark, .big-panel-light { padding: 2rem 1.5rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="hero-eyebrow">
+          <span class="live-dot"></span>
+          Built for Cebu University Students
+        </div>
+        <h1 class="hero-title">
+          The platform for<br>
+          students who want to <em>connect.</em>
+        </h1>
+        <p class="hero-subtitle">
+          CUlink brings Cebu university students together — real-time private chats, a shared Knowledge Wall, and instant file conversion, all in one free platform.
+        </p>
+        <div class="hero-actions">
+          <a href="{% url 'wall' %}" class="btn-hero-pink">
+            <i class="bi bi-newspaper"></i> Knowledge Wall
+          </a>
+          <a href="{% url 'chat_inbox' %}" class="btn-hero-outline">
+            <i class="bi bi-chat-dots-fill"></i> Start Chatting
+          </a>
+          {% if not user.is_authenticated %}
+          <a href="{% url 'register' %}" class="btn-hero-outline">
+            <i class="bi bi-person-plus-fill"></i> Create Free Account
+          </a>
+          {% endif %}
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="hero-stat-num">1,200+</div>
+            <div class="hero-stat-label">Students connected</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">318</div>
+            <div class="hero-stat-label">Knowledge posts</div>
+          </div>
+          <div>
+            <div class="hero-stat-num">5</div>
+            <div class="hero-stat-label">Universities linked</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Mockup -->
+      <div class="col-lg-6">
+        <div class="hero-mockup">
+          <div class="mockup-bar">
+            <div class="m-dot" style="background:#ff5f57;"></div>
+            <div class="m-dot" style="background:#ffbd2e;"></div>
+            <div class="m-dot" style="background:#28c840;"></div>
+            <span style="margin-left:10px;font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.4);">CUlink — Messages</span>
+          </div>
+          <div class="mockup-body">
+            <div class="mock-stat-row">
+              <div class="mock-stat">
+                <div class="ms-label">Chats</div>
+                <div class="ms-val">847</div>
+                <div class="ms-delta">↑ +18%</div>
+              </div>
+              <div class="mock-stat">
+                <div class="ms-label">Posts</div>
+                <div class="ms-val">318</div>
+                <div class="ms-delta">↑ +24 today</div>
+              </div>
+              <div class="mock-stat">
+                <div class="ms-label">Univs.</div>
+                <div class="ms-val">5</div>
+                <div class="ms-delta">Linked</div>
+              </div>
+            </div>
+            <div class="mock-chat-label">Recent Messages</div>
+            <div class="mock-bubble-in">
+              <div class="mock-av">JD</div>
+              <div class="bubble-text-in">Yawa bai legit, kabalo nako django.</div>
+            </div>
+            <div class="mock-bubble-out">
+              <div class="bubble-text-out">Ball knower.</div>
+            </div>
+            <div class="mock-bubble-in">
+              <div class="mock-av" style="background:#7c6fcd;">AK</div>
+              <div class="bubble-text-in">Maka convert tag payls diri bai?</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Feature Strip -->
+<div class="feature-strip">
+  <div class="strip-inner">
+    {% for item in ",,,,,,,,,,,,,,,,,,,,,,,,"|make_list %}
+    <span class="strip-item"><i class="bi bi-chat-dots-fill"></i> Real-time Chat</span>
+    <span class="strip-item"><i class="bi bi-newspaper"></i> Knowledge Wall</span>
+    <span class="strip-item"><i class="bi bi-shuffle"></i> Random Match</span>
+    <span class="strip-item"><i class="bi bi-file-earmark-image-fill"></i> PNG → JPG</span>
+    <span class="strip-item"><i class="bi bi-file-earmark-pdf-fill"></i> Image → PDF</span>
+    <span class="strip-item"><i class="bi bi-shield-lock-fill"></i> 100% Private</span>
+    <span class="strip-item"><i class="bi bi-mortarboard-fill"></i> Cebu Universities</span>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Features Intro -->
+<section class="features-intro">
+  <div class="container">
+    <div class="row align-items-end">
+      <div class="col-lg-6 reveal-left">
+        <div class="section-label">Everything in CUlink</div>
+        <h2 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 700; letter-spacing: -1px; line-height: 1.12;">
+          Students. Knowledge. Connection.
+        </h2>
+      </div>
+      <div class="col-lg-5 offset-lg-1 reveal-right">
+        <p style="color: var(--text-mid); font-size: 1rem; line-height: 1.75; margin: 0;">
+          From private messaging to shared notes and instant file conversion — CUlink is the all-in-one hub for Cebu university students.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Grid -->
+<section class="feature-grid">
+  <div class="container">
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-4 reveal delay-1">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-chat-dots-fill"></i></div>
+          <h5>Private Messaging</h5>
+          <p>Send real-time direct messages to any student on CUlink. Powered by Pusher for instant delivery — no refreshing needed.</p>
+          <a href="{% url 'chat_inbox' %}" class="feat-link">Start Chatting <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-2">
+        <div class="feat-card pink-accent">
+          <div class="feat-icon"><i class="bi bi-newspaper"></i></div>
+          <h5>Knowledge Wall</h5>
+          <p>Post study tips, notes and insights. Like and comment on posts from students across all Cebu universities — your shared campus feed.</p>
+          <a href="{% url 'wall' %}" class="feat-link" style="color:var(--pink);">Explore Wall <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-3">
+        <div class="feat-card purple-accent">
+          <div class="feat-icon"><i class="bi bi-shuffle"></i></div>
+          <h5>Random Connections</h5>
+          <p>Discover students you'd never meet otherwise. Match by university or go global — every click is a new connection waiting to happen.</p>
+          <a href="{% url 'chat_inbox' %}" class="feat-link" style="color:#5555cc;">Connect Now <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-1">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-file-earmark-image-fill"></i></div>
+          <h5>Image Conversion</h5>
+          <p>Convert between JPG, PNG, WEBP, and BMP instantly using your browser's Canvas API. Zero quality loss on lossless formats.</p>
+          <a href="{% url 'converter' %}" class="feat-link">Try Converter <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-2">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+          <h5>Image → PDF</h5>
+          <p>Turn any image into a perfectly sized PDF document in one click. Great for sharing study materials as documents.</p>
+          <a href="{% url 'converter' %}" class="feat-link">Convert Now <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 reveal delay-3">
+        <div class="feat-card">
+          <div class="feat-icon"><i class="bi bi-shield-lock-fill"></i></div>
+          <h5>100% Private</h5>
+          <p>Your files never leave your device. All conversions happen in your browser using Web APIs — no uploads, ever.</p>
+          <a href="{% url 'converter' %}" class="feat-link">Learn More <i class="bi bi-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Big Feature Panels -->
+<section style="padding: 2rem 0 5rem;">
+  <div class="container">
+    <div class="row g-3 mb-3">
+      <!-- Dark panel: Chat -->
+      <div class="col-lg-6 reveal-left">
+        <div class="big-panel-dark" style="height:100%;">
+          <div class="bp-eyebrow">
+            <i class="bi bi-chat-dots-fill" style="color:var(--pink);"></i> MESSAGING
+          </div>
+          <h3>Real-time chat, <span>instantly.</span></h3>
+          <p>Connect with any CUlink student across all Cebu universities. Messages arrive instantly without page refreshes, powered by WebSockets via Pusher.</p>
+          <a href="{% url 'chat_inbox' %}" class="btn-hero-pink" style="font-size:0.875rem;">
+            MESSAGING <i class="bi bi-arrow-right"></i>
+          </a>
+          <!-- Mini chat bubbles visual -->
+          <div style="margin-top:2rem; padding:1.25rem; background:rgba(255,255,255,0.05); border-radius:14px; border:1px solid rgba(255,255,255,0.07);">
+            <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:0.6rem;">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--pink);color:#fff;font-size:0.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">SR</div>
+              <div style="background:rgba(255,255,255,0.09);border-radius:12px 12px 12px 3px;padding:0.5rem 0.8rem;font-size:0.82rem;color:rgba(255,255,255,0.75);">Gi-check nimo ang wall? 🔥</div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:0.6rem;">
+              <div style="background:var(--pink);border-radius:12px 12px 3px 12px;padding:0.5rem 0.8rem;font-size:0.82rem;color:#fff;">Oo bai, daghan updates!</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-end;">
+              <div style="width:24px;height:24px;border-radius:50%;background:#5555cc;color:#fff;font-size:0.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">TL</div>
+              <div style="background:rgba(255,255,255,0.09);border-radius:12px 12px 12px 3px;padding:0.5rem 0.8rem;font-size:0.82rem;color:rgba(255,255,255,0.75);">Nice! Mag-convert ta ug file.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Light panel: Knowledge Wall -->
+      <div class="col-lg-6 reveal-right">
+        <div class="big-panel-light" style="height:100%;">
+          <div class="bp-eyebrow">
+            <i class="bi bi-newspaper" style="color:#5555cc;"></i> KNOWLEDGE WALL
+          </div>
+          <h3>Share what you know with your campus.</h3>
+          <p>Post study tips, class notes, and insights to the shared Knowledge Wall. Like and comment on posts from every Cebu university — all in one feed.</p>
+          <a href="{% url 'wall' %}" class="btn-dark" style="font-size:0.875rem;">
+            KNOWLEDGE WALL <i class="bi bi-arrow-right"></i>
+          </a>
+          <!-- Posts preview visual -->
+          <div style="margin-top:2rem; display:flex; flex-direction:column; gap:0.6rem;">
+            <div style="background:var(--bg-white);border-radius:12px;padding:0.9rem 1rem;border:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--bg-dark);color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">SR</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:0.82rem;font-weight:600;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">100 reason why Junas is gae</div>
+                <div style="font-size:0.72rem;color:var(--text-light);">SWU · 2 min ago · <span style="color:var(--pink);">♡ 42 likes</span></div>
+              </div>
+            </div>
+            <div style="background:var(--bg-white);border-radius:12px;padding:0.9rem 1rem;border:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#5555cc;color:#fff;font-size:0.75rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">TL</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:0.82rem;font-weight:600;color:var(--text-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">67 is the word of the year</div>
+                <div style="font-size:0.72rem;color:var(--text-light);">CTU · 5 min ago · <span style="color:var(--pink);">♡ 18 likes</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Converter Panel -->
+    <div class="row g-3">
+      <div class="col-12 reveal">
+        <div class="big-panel-dark" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2rem;">
+          <div style="flex:1;min-width:260px;">
+            <div class="bp-eyebrow">
+              <i class="bi bi-arrow-repeat" style="color:var(--pink);"></i> CONVERTER
+            </div>
+            <h3>Convert files — <span>right from your browser.</span></h3>
+            <p>No installs, no accounts needed. Upload an image or PDF, pick your output format, and download in seconds. Your files never touch our servers.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.5rem;">
+              <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius-pill);padding:0.3rem 0.9rem;font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.7);">JPG ↔ PNG</span>
+              <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius-pill);padding:0.3rem 0.9rem;font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.7);">Image → PDF</span>
+              <span style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:var(--radius-pill);padding:0.3rem 0.9rem;font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.7);">WEBP / BMP</span>
+            </div>
+            <a href="{% url 'converter' %}" class="btn-hero-pink" style="font-size:0.875rem;">
+              CONVERTER <i class="bi bi-arrow-right"></i>
+            </a>
+          </div>
+          <!-- Converter mini mockup -->
+          <div style="flex:0 0 300px;max-width:100%;">
+            <div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:1.5rem;">
+              <div style="border:2px dashed rgba(255,255,255,0.15);border-radius:12px;padding:1.5rem;text-align:center;margin-bottom:1rem;">
+                <i class="bi bi-cloud-upload" style="font-size:1.8rem;color:rgba(255,255,255,0.3);display:block;margin-bottom:0.4rem;"></i>
+                <span style="font-size:0.82rem;color:rgba(255,255,255,0.4);">Drop your file here</span>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span style="background:var(--pink);color:#fff;border-radius:8px;padding:0.35rem 0.8rem;font-size:0.8rem;font-weight:700;">JPG</span>
+                <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border-radius:8px;padding:0.35rem 0.8rem;font-size:0.8rem;font-weight:600;">PNG</span>
+                <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border-radius:8px;padding:0.35rem 0.8rem;font-size:0.8rem;font-weight:600;">WEBP</span>
+                <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);border-radius:8px;padding:0.35rem 0.8rem;font-size:0.8rem;font-weight:600;">PDF</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+{% if not user.is_authenticated %}
+<section class="cta-wrap">
+  <div class="container">
+    <div class="reveal">
+      <div class="section-label" style="color:rgba(255,255,255,0.3);">Join CUlink</div>
+      <h2>The student platform<br>for Cebu universities.</h2>
+      <p>Connect, share, and learn — all for free. No installation needed.</p>
+      <a href="{% url 'register' %}" class="btn-hero-pink" style="font-size:1rem;padding:1rem 2.5rem;">
+        <i class="bi bi-rocket-takeoff-fill"></i> Create Free Account
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

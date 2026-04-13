@@ -1,0 +1,498 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Dashboard — CUlink{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ─── Layout ─── */
+  .dash-wrap { background: var(--bg); min-height: calc(100vh - 70px); padding: 2.2rem 0 4rem; }
+
+  /* ─── Header ─── */
+  .dash-header {
+    background: var(--bg-dark);
+    border-radius: var(--radius-lg);
+    padding: 1.8rem 2.2rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .dash-header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(255,63,164,0.25), transparent 70%);
+    border-radius: 50%;
+  }
+  .dash-header::after {
+    content: '';
+    position: absolute;
+    left: 30%; bottom: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(94,122,245,0.15), transparent 70%);
+    border-radius: 50%;
+  }
+  .dash-eyebrow { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: rgba(255,255,255,.4); margin-bottom: .3rem; }
+  .dash-header h1 { font-size: 1.65rem; font-weight: 700; margin: 0; position: relative; z-index: 1; }
+  .dash-header p  { margin: .3rem 0 0; font-size: .88rem; color: rgba(255,255,255,.5); position: relative; z-index: 1; }
+
+  /* ─── Stat Cards Strip ─── */
+  .stat-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: .9rem; margin-bottom: 1.8rem; }
+  @media(max-width:768px){ .stat-strip { grid-template-columns: repeat(2,1fr); } }
+  @media(max-width:480px){ .stat-strip { grid-template-columns: 1fr 1fr; } }
+
+  .stat-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1.3rem 1.2rem;
+    box-shadow: var(--shadow-sm);
+    transition: all .25s;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 3px;
+    background: var(--sc-color, var(--pink));
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+  .sc-icon { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .sc-label { font-size: .72rem; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: .05em; }
+  .sc-value { font-size: 1.7rem; font-weight: 800; color: var(--text-dark); line-height: 1; }
+  .sc-sub   { font-size: .75rem; color: var(--text-light); }
+
+  /* ─── Two-column grid ─── */
+  .dash-grid { display: grid; grid-template-columns: 1fr 360px; gap: 1.2rem; align-items: start; }
+  @media(max-width:900px){ .dash-grid { grid-template-columns: 1fr; } }
+
+  /* ─── Panel Cards ─── */
+  .panel-card {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .panel-hd {
+    display: flex; align-items: center; gap: 10px;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .85rem; font-weight: 700; color: var(--text-dark);
+  }
+  .panel-hd i { color: var(--pink); font-size: 1rem; }
+  .panel-hd-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .panel-body { padding: 1rem 1.25rem; }
+
+  /* ─── Upcoming Due Dates ─── */
+  .due-list { display: flex; flex-direction: column; gap: .55rem; }
+  .due-item {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem .8rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: all .18s;
+    text-decoration: none;
+  }
+  .due-item:hover { border-color: var(--pink); background: rgba(255,63,164,.03); }
+  .due-pill {
+    font-size: .68rem; font-weight: 700; border-radius: 20px;
+    padding: .18rem .55rem; white-space: nowrap; flex-shrink: 0;
+  }
+  .due-pill.overdue { background: #fee2e2; color: #dc2626; }
+  .due-pill.today   { background: #fef9c3; color: #d97706; }
+  .due-pill.soon    { background: #f0fdf4; color: #16a34a; }
+  .due-item-title { font-size: .85rem; font-weight: 600; color: var(--text-dark); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .due-item-doc   { font-size: .72rem; color: var(--text-light); flex-shrink: 0; }
+  .due-empty { text-align: center; padding: 2rem 1rem; color: var(--text-light); font-size: .88rem; }
+  .due-empty i { display: block; font-size: 2rem; margin-bottom: .5rem; color: var(--border); }
+
+  /* ─── Quick Capture ─── */
+  .qc-form { display: flex; flex-direction: column; gap: .6rem; }
+  .qc-row { display: flex; gap: .5rem; align-items: stretch; }
+  .qc-input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .65rem 1rem;
+    font-size: .88rem;
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text-dark);
+    outline: none;
+    transition: border-color .2s;
+  }
+  .qc-input:focus { border-color: var(--pink); }
+  .qc-select {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: .65rem .75rem;
+    font-size: .82rem;
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text-dark);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .qc-select:focus { border-color: var(--pink); }
+  .qc-btn {
+    background: var(--pink);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: .65rem 1.2rem;
+    font-size: .88rem;
+    font-weight: 700;
+    font-family: 'Space Grotesk', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background .2s, transform .15s;
+    white-space: nowrap;
+  }
+  .qc-btn:hover { background: var(--pink-dark); transform: translateY(-1px); }
+  .qc-success { font-size: .78rem; color: #16a34a; font-weight: 600; display: none; padding: .3rem 0; }
+
+  /* ─── Recent Docs ─── */
+  .recent-list { display: flex; flex-direction: column; gap: .4rem; }
+  .recent-item {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .55rem .8rem;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    color: var(--text-dark);
+    transition: background .15s;
+  }
+  .recent-item:hover { background: var(--bg-card); color: var(--text-dark); }
+  .recent-ic { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .85rem; flex-shrink: 0; }
+  .recent-title { font-size: .87rem; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent-type  { font-size: .68rem; font-weight: 600; color: var(--text-light); flex-shrink: 0; }
+  .recent-empty { color: var(--text-light); font-size: .85rem; padding: .5rem 0; }
+
+  /* ─── Profile section ─── */
+  .profile-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; }
+  .prof-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--pink); color: #fff; font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .prof-avatar img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; }
+  .prof-name  { font-size: 1rem; font-weight: 700; color: var(--text-dark); }
+  .prof-meta  { font-size: .78rem; color: var(--text-light); }
+  .prof-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; }
+
+  .btn-sm-outline {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-pill);
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .3rem .9rem;
+    background: transparent;
+    color: var(--text-mid);
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all .2s;
+  }
+  .btn-sm-outline:hover { border-color: var(--text-dark); color: var(--text-dark); }
+  .btn-sm-pink { background: var(--pink); color: #fff; border-color: var(--pink); }
+  .btn-sm-pink:hover { background: var(--pink-dark); border-color: var(--pink-dark); color: #fff; }
+
+  /* ─── Info rows ─── */
+  .info-row   { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+  .info-row:last-child { border-bottom: none; }
+  .ir-label   { color: var(--text-light); font-weight: 500; }
+  .ir-value   { font-weight: 600; color: var(--text-dark); }
+
+  /* ─── Verification banner ─── */
+  .verify-banner {
+    background: linear-gradient(135deg,#fffbeb,#fef3c7);
+    border: 1.5px solid #fbbf24;
+    border-radius: var(--radius-md);
+    padding: .9rem 1.1rem;
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="dash-header reveal">
+      <div class="dash-eyebrow">Welcome back</div>
+      <h1>{% if user.display_name %}{{ user.display_name }}{% else %}{{ user.username }}{% endif %} 👋</h1>
+      <p>Here's your workspace at a glance — {{ today|date:"l, N j" }}</p>
+    </div>
+
+    <!-- Verification Banner -->
+    {% if not user.is_verified %}
+    <div class="verify-banner reveal">
+      <i class="bi bi-exclamation-triangle-fill" style="color:#d97706;font-size:1.2rem;flex-shrink:0;"></i>
+      <div style="flex:1;min-width:200px;">
+        <strong style="color:#92400e;">Email not verified</strong>
+        <span style="color:#a16207;font-size:.88rem;"> — Verify your email to unlock Chat & Knowledge Wall.</span>
+      </div>
+      <a href="{% url 'resend_verification' %}" style="color:#d97706;font-weight:700;font-size:.85rem;text-decoration:none;white-space:nowrap;">Resend verification →</a>
+    </div>
+    {% endif %}
+
+    <!-- Stats Strip -->
+    <div class="stat-strip">
+      <div class="stat-card reveal delay-1" style="--sc-color:var(--pink);">
+        <div class="sc-icon" style="background:rgba(255,63,164,.12);color:var(--pink);"><i class="bi bi-journals"></i></div>
+        <div class="sc-label">Total Docs</div>
+        <div class="sc-value">{{ total_docs }}</div>
+        <div class="sc-sub">workspace documents</div>
+      </div>
+      <div class="stat-card reveal delay-2" style="--sc-color:#f59e0b;">
+        <div class="sc-icon" style="background:rgba(245,158,11,.12);color:#f59e0b;"><i class="bi bi-list-task"></i></div>
+        <div class="sc-label">Open Tasks</div>
+        <div class="sc-value">{{ open_tasks }}</div>
+        <div class="sc-sub">items not yet done</div>
+      </div>
+      <div class="stat-card reveal delay-3" style="--sc-color:#7c3aed;">
+        <div class="sc-icon" style="background:rgba(124,58,237,.12);color:#7c3aed;"><i class="bi bi-bullseye"></i></div>
+        <div class="sc-label">Goals Done</div>
+        <div class="sc-value">{{ done_goals }}</div>
+        <div class="sc-sub">of {{ total_goals }} total goals</div>
+      </div>
+      <div class="stat-card reveal delay-4" style="--sc-color:#10b981;">
+        <div class="sc-icon" style="background:rgba(16,185,129,.12);color:#10b981;"><i class="bi bi-patch-check-fill"></i></div>
+        <div class="sc-label">Status</div>
+        <div class="sc-value" style="font-size:1rem;">
+          {% if user.is_verified %}<span class="badge-verified">Verified</span>{% else %}<span class="badge-unverified">Unverified</span>{% endif %}
+        </div>
+        <div class="sc-sub">{{ user.get_role_display|default:"Member" }}</div>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dash-grid">
+
+      <!-- LEFT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:1.2rem;">
+
+        <!-- Upcoming Due Dates -->
+        <div class="panel-card reveal">
+          <div class="panel-hd">
+            <i class="bi bi-calendar-event-fill"></i> Upcoming Due Dates
+            <div class="panel-hd-actions">
+              <a href="{% url 'workspace' %}" class="btn-sm-outline" style="font-size:.72rem;">Open Workspace →</a>
+            </div>
+          </div>
+          <div class="panel-body">
+            {% if upcoming %}
+            <div class="due-list">
+              {% for item in upcoming %}
+              {% with days_diff=item.due_date|timeuntil:today %}
+              <div class="due-item">
+                {% if item.due_date < today %}
+                  <span class="due-pill overdue">Overdue</span>
+                {% elif item.due_date == today %}
+                  <span class="due-pill today">Today</span>
+                {% else %}
+                  <span class="due-pill soon">{{ item.due_date|timeuntil }}</span>
+                {% endif %}
+                <span class="due-item-title" title="{{ item.content }}">{{ item.content }}</span>
+                <span class="due-item-doc">
+                  <i class="bi bi-folder2"></i> {{ item.doc.title|truncatechars:18 }}
+                </span>
+              </div>
+              {% endwith %}
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="due-empty">
+              <i class="bi bi-calendar-check"></i>
+              No upcoming deadlines in the next 7 days — you're all clear!
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Quick Capture -->
+        {% if todo_docs %}
+        <div class="panel-card reveal delay-1">
+          <div class="panel-hd">
+            <i class="bi bi-lightning-charge-fill"></i> Quick Capture
+          </div>
+          <div class="panel-body">
+            <p style="font-size:.82rem;color:var(--text-light);margin-bottom:.8rem;">Instantly add a task to any To-Do list — no page switch needed.</p>
+            <div class="qc-form" id="qcForm">
+              <input class="qc-input" id="qcText" type="text" placeholder="What needs to be done? e.g. Read chapter 4…" maxlength="200" autocomplete="off">
+              <div class="qc-row">
+                <select class="qc-select" id="qcDoc" style="flex:1;">
+                  {% for doc in todo_docs %}
+                  <option value="{{ doc.pk }}">📋 {{ doc.title }}</option>
+                  {% endfor %}
+                </select>
+                <button class="qc-btn" onclick="quickCapture()"><i class="bi bi-plus-lg"></i> Add Task</button>
+              </div>
+              <div class="qc-success" id="qcSuccess"><i class="bi bi-check-circle-fill"></i> Task added successfully!</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Profile Info -->
+        <div class="panel-card reveal delay-2">
+          <div class="panel-hd">
+            <i class="bi bi-person-circle"></i> Account Details
+          </div>
+          <div class="profile-row">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" class="prof-avatar" style="padding:0;" alt="">
+            {% else %}
+              <div class="prof-avatar">{{ user.username|slice:":1"|upper }}</div>
+            {% endif %}
+            <div>
+              <div class="prof-name">{% if user.display_name %}{{ user.display_name }}{% else %}{{ user.username }}{% endif %}</div>
+              <div class="prof-meta">@{{ user.username }} · {{ user.email }}</div>
+              <div class="prof-actions">
+                <a href="{% url 'profile' %}" class="btn-sm-outline btn-sm-pink"><i class="bi bi-person-fill"></i> Edit Profile</a>
+                {% if user.is_staff %}<a href="{% url 'admin_dashboard' %}" class="btn-sm-outline"><i class="bi bi-speedometer2"></i> Admin</a>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="panel-body" style="border-top:1px solid var(--border);padding-top:1rem;">
+            <div class="info-row"><span class="ir-label">Member Since</span><span class="ir-value">{{ user.date_joined|date:"M j, Y" }}</span></div>
+            <div class="info-row"><span class="ir-label">Last Login</span><span class="ir-value">{{ user.last_login|date:"N j, Y g:i A"|default:"—" }}</span></div>
+            <div class="info-row"><span class="ir-label">University</span><span class="ir-value">{{ user.get_university_display|default:"Not set" }}</span></div>
+            <div class="info-row"><span class="ir-label">Account Status</span><span class="ir-value">{% if user.is_active %}<span class="badge-active">Active</span>{% else %}<span class="badge-inactive">Inactive</span>{% endif %}</span></div>
+          </div>
+        </div>
+
+      </div><!-- /LEFT -->
+
+      <!-- RIGHT COLUMN -->
+      <div style="display:flex;flex-direction:column;gap:1.2rem;">
+
+        <!-- Recent Docs -->
+        <div class="panel-card reveal">
+          <div class="panel-hd">
+            <i class="bi bi-clock-history"></i> Recent Workspace
+            <div class="panel-hd-actions">
+              <a href="{% url 'workspace' %}" class="btn-sm-outline btn-sm-pink" style="font-size:.72rem;"><i class="bi bi-box-arrow-up-right"></i> Open</a>
+            </div>
+          </div>
+          <div class="panel-body">
+            {% if recent_docs %}
+            <div class="recent-list">
+              {% for doc in recent_docs %}
+              <a href="{% url 'workspace' %}" class="recent-item">
+                {% if doc.type == 'todo' %}
+                  <span class="recent-ic" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-check2-square"></i></span>
+                {% elif doc.type == 'project' %}
+                  <span class="recent-ic" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-kanban"></i></span>
+                {% elif doc.type == 'goal' %}
+                  <span class="recent-ic" style="background:#f3e8ff;color:#7c3aed;"><i class="bi bi-bullseye"></i></span>
+                {% elif doc.type == 'note' %}
+                  <span class="recent-ic" style="background:#fce7f3;color:#db2777;"><i class="bi bi-journal-text"></i></span>
+                {% elif doc.type == 'habit' %}
+                  <span class="recent-ic" style="background:#fff7ed;color:#ea580c;"><i class="bi bi-activity"></i></span>
+                {% endif %}
+                <span class="recent-title">{{ doc.title }}</span>
+                <span class="recent-type">{{ doc.updated_at|timesince }} ago</span>
+              </a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="recent-empty">No workspace docs yet. <a href="{% url 'workspace' %}" style="color:var(--pink);font-weight:600;">Create one →</a></div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="panel-card reveal delay-1">
+          <div class="panel-hd"><i class="bi bi-grid-fill"></i> Quick Links</div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:.45rem;">
+            <a href="{% url 'workspace' %}" class="btn-sm-outline" style="justify-content:flex-start;gap:10px;padding:.65rem 1rem;border-radius:var(--radius-sm);">
+              <i class="bi bi-journal-bookmark-fill" style="color:#7c3aed;"></i> Workspace
+            </a>
+            {% if user.is_verified %}
+            <a href="{% url 'wall' %}" class="btn-sm-outline" style="justify-content:flex-start;gap:10px;padding:.65rem 1rem;border-radius:var(--radius-sm);">
+              <i class="bi bi-journals" style="color:var(--pink);"></i> Knowledge Wall
+            </a>
+            <a href="{% url 'chat_inbox' %}" class="btn-sm-outline" style="justify-content:flex-start;gap:10px;padding:.65rem 1rem;border-radius:var(--radius-sm);">
+              <i class="bi bi-chat-dots" style="color:#2563eb;"></i> Messages
+              {% if unread_dm_count %}<span style="background:var(--pink);color:#fff;font-size:.65rem;padding:0 6px;border-radius:20px;margin-left:auto;">{{ unread_dm_count }}</span>{% endif %}
+            </a>
+            {% endif %}
+            <a href="{% url 'converter' %}" class="btn-sm-outline" style="justify-content:flex-start;gap:10px;padding:.65rem 1rem;border-radius:var(--radius-sm);">
+              <i class="bi bi-arrow-left-right" style="color:#10b981;"></i> File Converter
+            </a>
+            {% if user.is_staff or user.is_superuser %}
+            <a href="{% url 'admin_dashboard' %}" class="btn-sm-outline" style="justify-content:flex-start;gap:10px;padding:.65rem 1rem;border-radius:var(--radius-sm);">
+              <i class="bi bi-speedometer2" style="color:#f59e0b;"></i> Admin Dashboard
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Sign Out -->
+        <div class="panel-card reveal delay-2">
+          <div class="panel-body">
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button type="submit" class="btn-sm-outline" style="width:100%;justify-content:center;padding:.65rem 1rem;border-radius:var(--radius-sm);color:#dc2626;border-color:rgba(220,38,38,.2);background:#fef2f2;">
+                <i class="bi bi-box-arrow-right"></i> Sign Out
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div><!-- /RIGHT -->
+
+    </div><!-- /dash-grid -->
+  </div><!-- /container -->
+</div><!-- /dash-wrap -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const QC_CSRF = () => document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}';
+
+async function quickCapture() {
+  const text = document.getElementById('qcText').value.trim();
+  const docPk = document.getElementById('qcDoc').value;
+  if (!text) { document.getElementById('qcText').focus(); return; }
+
+  const btn = document.querySelector('.qc-btn');
+  btn.disabled = true; btn.textContent = 'Adding…';
+
+  try {
+    const resp = await fetch(`/workspace/doc/${docPk}/item/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': QC_CSRF() },
+      body: JSON.stringify({ content: text, status: 'todo', priority: 'medium' }),
+    });
+    const data = await resp.json();
+    if (data.ok) {
+      document.getElementById('qcText').value = '';
+      const s = document.getElementById('qcSuccess');
+      s.style.display = 'block';
+      setTimeout(() => { s.style.display = 'none'; }, 2800);
+    }
+  } catch(e) {}
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="bi bi-plus-lg"></i> Add Task';
+}
+
+// Allow Enter to submit quick capture
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('qcText');
+  if (inp) inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); quickCapture(); } });
+});
+</script>
+{% endblock %}

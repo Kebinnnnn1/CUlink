@@ -1,0 +1,1123 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Workspace — CUlink{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Layout ── */
+body   { overflow: hidden !important; }
+body > main { display: flex !important; flex-direction: column !important; overflow: hidden !important; padding: 0 !important; flex: 1 !important; min-height: 0 !important; }
+footer { display: none !important; }
+.ws-root { display: flex; flex: 1; overflow: hidden; min-height: 0; font-family: 'Space Grotesk','Segoe UI',sans-serif; height: 0; }
+
+/* ── Sidebar ── */
+.ws-sb {
+  width: 250px; min-width: 250px; background: var(--bg-card);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  overflow: hidden; z-index: 10; transition: width .28s cubic-bezier(.4,0,.2,1), min-width .28s cubic-bezier(.4,0,.2,1), transform .28s cubic-bezier(.4,0,.2,1);
+}
+[data-theme="dark"] .ws-sb {
+  background: #0c0c10;
+  border-right-color: rgba(255,255,255,0.07);
+}
+.ws-sb.ws-sb-collapsed { width: 0; min-width: 0; border-right: none; }
+.ws-sb-hd {
+  padding: .5rem .75rem; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: .4rem; flex-shrink: 0;
+}
+[data-theme="dark"] .ws-sb-hd { border-bottom-color: rgba(255,255,255,0.07); }
+.ws-sb-lbl { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--text-light); flex: 1; }
+.ws-sb-body { flex: 1; overflow-y: auto; padding: .3rem 0; }
+.ws-grp-lbl {
+  padding: .5rem 1rem .1rem; font-size: .62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .09em; color: var(--text-light);
+}
+.ws-doc-btn {
+  display: flex; align-items: center; gap: 8px; padding: .33rem 1rem;
+  width: 100%; border: none; background: none; color: var(--text-mid);
+  font-size: .83rem; font-weight: 500; text-align: left; cursor: pointer; transition: background .12s; font-family: 'Space Grotesk', sans-serif;
+}
+.ws-doc-btn:hover  { background: var(--bg-card-alt); color: var(--text-dark); }
+[data-theme="dark"] .ws-doc-btn:hover { background: rgba(255,255,255,0.07); color: #fff; }
+.ws-doc-btn.active { background: rgba(255,63,164,0.12); color: var(--pink); font-weight: 700; border-right: 3px solid var(--pink); }
+.ws-dot  { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ws-doc-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* New-doc button */
+.ws-new-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: .26rem .55rem;
+  background: var(--pink); color: #fff; border: none; border-radius: var(--radius-pill);
+  font-size: .73rem; font-weight: 700; cursor: pointer; position: relative; transition: opacity .15s; flex-shrink: 0; font-family: 'Space Grotesk', sans-serif;
+}
+.ws-new-btn:hover { opacity: .85; }
+.ws-picker {
+  position: absolute; top: calc(100% + 6px); right: 0; background: var(--bg-white);
+  border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: .32rem; z-index: 700; display: none; min-width: 192px;
+}
+.ws-picker.open { display: block; }
+.ws-pick-opt {
+  display: flex; align-items: center; gap: 9px; padding: .42rem .6rem; border-radius: 8px;
+  cursor: pointer; font-size: .83rem; font-weight: 500; color: var(--text-dark);
+  border: none; background: none; width: 100%; text-align: left; transition: background .12s; font-family: 'Space Grotesk', sans-serif;
+}
+.ws-pick-opt:hover { background: var(--bg); }
+.ws-pick-ic { width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: .82rem; flex-shrink: 0; }
+
+/* Mobile close */
+.ws-sb-close {
+  display: none; background: none; border: 1px solid var(--border); border-radius: 7px;
+  width: 26px; height: 26px; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-light); font-size: .78rem; transition: all .15s; flex-shrink: 0;
+}
+.ws-sb-close:hover { border-color: var(--pink); color: var(--pink); }
+.ws-bd { display: none; position: fixed; inset: 0; z-index: 590; background: rgba(0,0,0,.42); backdrop-filter: blur(2px); }
+.ws-bd.on { display: block; }
+
+
+/* ── Main ── */
+.ws-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.ws-topbar {
+  display: flex; align-items: center; gap: .5rem; padding: .4rem .9rem;
+  border-bottom: 1px solid var(--border); background: var(--bg); flex-shrink: 0;
+}
+.ws-tog {
+  background: none; border: 1px solid var(--border); border-radius: var(--radius-pill);
+  width: 27px; height: 27px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-light); font-size: .82rem; transition: all .2s; flex-shrink: 0;
+}
+.ws-tog:hover { border-color: var(--pink); color: var(--pink); }
+.ws-tb-title { font-size: .87rem; font-weight: 700; color: var(--text-dark); line-height: 1.2; }
+.ws-tb-sub   { font-size: .7rem; color: var(--text-light); line-height: 1.2; }
+.ws-content  { flex: 1; overflow-y: auto; padding: 1rem 1.1rem; background: var(--bg); }
+
+/* ── Welcome ── */
+.ws-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 56vh; text-align: center; padding: 2rem; }
+.ws-wel-ic  { width: 70px; height: 70px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.1rem; background: rgba(255,63,164,0.1); color: var(--pink); }
+.ws-type-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: .55rem; max-width: 540px; width: 100%; }
+.ws-tc { background: var(--bg-white); border: 1.5px solid var(--border); border-radius: var(--radius-md); padding: .9rem .7rem; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: .32rem; transition: all .2s; }
+.ws-tc:hover { transform: translateY(-3px); border-color: var(--pink); box-shadow: var(--shadow-md); }
+.ws-tc-ic   { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.ws-tc-name { font-size: .78rem; font-weight: 700; color: var(--text-dark); }
+
+/* ── Doc header ── */
+.ws-doc-hd { display: flex; align-items: center; gap: .8rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.ws-doc-ic  { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
+.ws-doc-ti  { flex: 1; font-size: 1.5rem; font-weight: 700; border: none; background: transparent; color: var(--text-dark); outline: none; padding: 0; letter-spacing: -.4px; min-width: 0; font-family: 'Space Grotesk', sans-serif; }
+.ws-doc-ti::placeholder { color: var(--text-light); }
+.ws-add-btn { display: inline-flex; align-items: center; gap: 5px; background: var(--pink); color: #fff; border: none; border-radius: var(--radius-pill); padding: .32rem .82rem; font-size: .8rem; font-weight: 700; cursor: pointer; transition: opacity .15s; flex-shrink: 0; font-family: 'Space Grotesk', sans-serif; }
+.ws-add-btn:hover { opacity: .85; }
+.ws-del-doc { background: none; border: 1.5px solid var(--border); border-radius: var(--radius-pill); padding: .3rem .58rem; font-size: .78rem; color: var(--text-light); cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all .2s; flex-shrink: 0; }
+.ws-del-doc:hover { border-color: #ef4444; color: #ef4444; }
+
+/* ── Progress bar ── */
+.ws-prog { margin-bottom: 1rem; }
+.ws-prog-track { height: 7px; background: var(--bg-card); border-radius: 4px; overflow: hidden; margin-bottom: .22rem; }
+.ws-prog-fill  { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.ws-prog-lbl   { font-size: .72rem; color: var(--text-light); font-weight: 500; }
+
+/* ── Badges ── */
+.wb { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 50px; font-size: .65rem; font-weight: 700; text-transform: uppercase; flex-shrink: 0; }
+.wb-high    { background: rgba(220,38,38,.12); color: #dc2626; }
+.wb-medium  { background: rgba(217,119,6,.12); color: #d97706; }
+.wb-low     { background: rgba(22,163,74,.12);  color: #16a34a; }
+.wb-due     { background: var(--bg-card); color: var(--text-light); }
+.wb-overdue { background: rgba(220,38,38,.12); color: #dc2626; }
+.wb-effort  { background: rgba(79,70,229,.1); color: #4f46e5; }
+.wb-prog    { background: rgba(37,99,235,.1); color: #2563eb; }
+
+/* ── Todo rows ── */
+.ws-todo-row { display: flex; align-items: center; gap: .5rem; padding: .48rem .35rem; border-radius: 8px; transition: background .12s; border-bottom: 1px solid var(--border); }
+.ws-todo-row:last-child { border-bottom: none; }
+.ws-todo-row:hover { background: var(--bg-card); }
+.ws-chk { background: none; border: none; cursor: pointer; font-size: 1.05rem; color: var(--text-light); padding: 0; flex-shrink: 0; transition: color .15s, transform .1s; }
+.ws-chk:hover { transform: scale(1.15); }
+.ws-chk.done { color: #16a34a; }
+.ws-item-lbl { flex: 1; font-size: .87rem; color: var(--text-dark); cursor: pointer; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-item-lbl.done-text { text-decoration: line-through; color: var(--text-light); }
+.ws-row-acts { display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
+.ws-todo-row:hover .ws-row-acts { opacity: 1; }
+.ws-act { background: none; border: none; cursor: pointer; padding: 3px 5px; border-radius: 5px; font-size: .78rem; color: var(--text-light); transition: all .15s; }
+.ws-act:hover { background: var(--bg-card); color: var(--pink); }
+.ws-act.del:hover { background: rgba(239,68,68,.1); color: #ef4444; }
+
+/* ── Kanban ── */
+.ws-kanban { display: grid; grid-template-columns: repeat(4,1fr); gap: .75rem; align-items: start; }
+.ws-kb-col { background: var(--bg-card); border-radius: var(--radius-md); padding: .75rem; display: flex; flex-direction: column; gap: .42rem; min-height: 120px; }
+.ws-kb-col-title {
+  display: flex; align-items: center; gap: 6px; font-size: .67rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; padding-bottom: .4rem; border-bottom: 2px solid var(--border);
+}
+.ws-kb-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.ws-kb-count { font-size: .66rem; font-weight: 600; opacity: .6; margin-left: auto; }
+.ws-proj-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: 10px; padding: .62rem; transition: box-shadow .2s, transform .15s; cursor: pointer; position: relative; }
+.ws-proj-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.ws-card-name { font-size: .86rem; font-weight: 600; color: var(--text-dark); margin-bottom: .3rem; padding-right: 1.6rem; }
+.ws-card-meta { display: flex; flex-wrap: wrap; gap: .28rem; margin-bottom: .38rem; }
+.ws-card-pt { display: flex; justify-content: space-between; font-size: .67rem; color: var(--text-light); margin-bottom: 2px; }
+.ws-card-track { height: 5px; background: var(--bg-card); border-radius: 3px; overflow: hidden; }
+.ws-card-fill  { height: 100%; background: linear-gradient(90deg,var(--pink),#ff7ec9); border-radius: 3px; transition: width .3s; }
+.ws-kb-add { background: none; border: 1px dashed var(--border); border-radius: 8px; padding: .32rem; width: 100%; font-size: .77rem; color: var(--text-light); cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: .15rem; font-family: 'Space Grotesk', sans-serif; }
+.ws-kb-add:hover { border-color: var(--pink); color: var(--pink); background: rgba(255,63,164,.04); }
+.ws-card-del { position: absolute; top: .4rem; right: .4rem; background: none; border: none; cursor: pointer; width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: .72rem; color: var(--text-light); opacity: 0; transition: opacity .15s, background .15s, color .15s; }
+.ws-proj-card:hover .ws-card-del { opacity: 1; }
+.ws-card-del:hover { background: rgba(239,68,68,.12); color: #ef4444; }
+
+/* ── Sidebar Search ── */
+.ws-search-wrap { padding: .3rem .55rem .15rem; flex-shrink: 0; }
+.ws-search-inp {
+  width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-pill);
+  padding: .3rem .7rem .3rem 2rem; font-size: .8rem; font-family: 'Space Grotesk', sans-serif;
+  background: var(--bg); color: var(--text-dark); outline: none; transition: border-color .15s;
+  position: relative;
+}
+.ws-search-inp:focus { border-color: var(--pink); }
+.ws-search-box { position: relative; }
+.ws-search-box i { position: absolute; left: .55rem; top: 50%; transform: translateY(-50%); font-size: .72rem; color: var(--text-light); pointer-events: none; }
+.ws-search-clear { position: absolute; right: .5rem; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-light); font-size: .72rem; transition: color .15s; }
+.ws-search-clear:hover { color: var(--pink); }
+.ws-hit { display: block; padding: .22rem 1rem .22rem 1.8rem; font-size: .77rem; color: var(--text-mid); cursor: pointer; border-radius: 4px; transition: background .1s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-hit:hover { background: var(--bg-card-alt); color: var(--text-dark); }
+.ws-hit mark { background: rgba(255,63,164,.18); color: var(--pink); border-radius: 2px; padding: 0 1px; font-style: normal; }
+
+/* ── Goals ── */
+.ws-goal-card {
+  background: var(--bg-white); border: 1px solid var(--border); border-radius: 12px;
+  padding: .75rem .9rem; margin-bottom: .5rem; transition: box-shadow .2s;
+}
+.ws-goal-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+.ws-goal-card-top { display: flex; align-items: flex-start; gap: .65rem; }
+.ws-goal-chk { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); background: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .74rem; flex-shrink: 0; transition: all .2s; margin-top: 2px; }
+.ws-goal-chk.done { background: #16a34a; border-color: #16a34a; color: #fff; }
+.ws-goal-name { flex: 1; font-size: .9rem; font-weight: 600; color: var(--text-dark); cursor: pointer; min-width: 0; line-height: 1.4; }
+.ws-goal-name.done-text { text-decoration: line-through; color: var(--text-light); }
+.ws-goal-chips { display: flex; gap: .28rem; flex-wrap: wrap; margin-top: .38rem; }
+.ws-goal-chip { font-size: .64rem; font-weight: 700; padding: .14rem .45rem; border-radius: 20px; text-transform: uppercase; letter-spacing: .04em; }
+.ws-goal-prog { margin-top: .5rem; }
+.ws-goal-prog-label { display: flex; justify-content: space-between; font-size: .68rem; color: var(--text-light); margin-bottom: .2rem; }
+.ws-goal-prog-track { height: 5px; background: var(--bg-card); border-radius: 3px; overflow: hidden; }
+.ws-goal-prog-fill  { height: 100%; border-radius: 3px; transition: width .4s; background: linear-gradient(90deg,#7c3aed,#ec4899); }
+/* Timeline strip */
+.ws-goal-timeline { display: flex; align-items: center; gap: .4rem; margin-top: .45rem; font-size: .68rem; color: var(--text-light); }
+.ws-goal-tl-bar { flex: 1; height: 4px; background: var(--bg-card); border-radius: 2px; overflow: hidden; }
+.ws-goal-tl-fill { height: 100%; background: linear-gradient(90deg,#7c3aed,#ec4899); border-radius: 2px; }
+
+/* ── Kanban DnD ── */
+.ws-kb-col.dnd-over { background: rgba(255,63,164,.07); border: 1.5px dashed var(--pink); }
+.ws-proj-card.dnd-dragging { opacity: .45; transform: scale(.97); }
+
+
+/* ── Notes ── */
+.ws-notes-layout { display: flex; gap: .75rem; align-items: start; }
+.ws-notes-list { width: 200px; min-width: 200px; display: flex; flex-direction: column; gap: .3rem; }
+.ws-note-item { background: var(--bg-white); border: 1.5px solid var(--border); border-radius: 10px; padding: .5rem .65rem; cursor: pointer; transition: border-color .15s, background .15s; position: relative; }
+.ws-note-item:hover { border-color: var(--pink); background: rgba(255,63,164,0.04); }
+.ws-note-item.active { border-color: var(--pink); background: rgba(255,63,164,.06); }
+.ws-note-item-title { font-size: .78rem; font-weight: 600; color: var(--text-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-note-item-date { font-size: .66rem; color: var(--text-light); margin-top: 1px; }
+.ws-note-del { position: absolute; top: .3rem; right: .3rem; background: none; border: none; cursor: pointer; width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: .65rem; color: var(--text-light); opacity: 0; transition: opacity .15s, background .15s, color .15s; }
+.ws-note-item:hover .ws-note-del { opacity: 1; }
+.ws-note-del:hover { background: rgba(239,68,68,.12); color: #ef4444; }
+.ws-note-new { background: none; border: 1px dashed var(--border); border-radius: 10px; padding: .42rem; width: 100%; font-size: .77rem; color: var(--text-light); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all .15s; font-family: 'Space Grotesk', sans-serif; }
+.ws-note-new:hover { border-color: var(--pink); color: var(--pink); background: rgba(255,63,164,.04); }
+.ws-note-editor { flex: 1; min-width: 0; }
+.ws-note-editor-card { background: var(--bg-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem 1.2rem; }
+/* Note title input */
+.ws-note-title-inp {
+  width: 100%; border: none; background: transparent; outline: none;
+  font-size: 1.25rem; font-weight: 700; color: var(--text-dark);
+  font-family: 'Space Grotesk', sans-serif; padding: 0 0 .4rem 0;
+  border-bottom: 1.5px solid var(--border); margin-bottom: .65rem;
+  letter-spacing: -.3px; transition: border-color .15s;
+}
+.ws-note-title-inp::placeholder { color: var(--text-light); font-weight: 500; }
+.ws-note-title-inp:focus { border-bottom-color: var(--pink); }
+/* Toolbar */
+.ws-note-toolbar { display: flex; align-items: center; gap: .3rem; margin-bottom: .55rem; border-bottom: 1px solid var(--border); padding-bottom: .5rem; flex-wrap: wrap; }
+.ws-note-status { font-size: .72rem; color: var(--text-light); flex: 1; margin-left: .3rem; }
+.ws-note-save-btn { display: inline-flex; align-items: center; gap: 4px; background: var(--pink); color: #fff; border: none; border-radius: var(--radius-pill); padding: .28rem .7rem; font-size: .76rem; font-weight: 700; cursor: pointer; transition: opacity .15s; font-family: 'Space Grotesk', sans-serif; }
+.ws-note-save-btn:hover { opacity: .85; }
+.ws-note-fmt-btn {
+  background: none; border: 1.5px solid var(--border); border-radius: 6px;
+  width: 28px; height: 26px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: .78rem; font-weight: 700; color: var(--text-mid);
+  transition: all .15s; font-family: 'Space Grotesk', sans-serif; flex-shrink: 0;
+}
+.ws-note-fmt-btn:hover, .ws-note-fmt-btn.active { background: rgba(255,63,164,.1); border-color: var(--pink); color: var(--pink); }
+.ws-note-fmt-sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; margin: 0 .1rem; }
+/* Rich text editor area */
+.ws-note-area {
+  width: 100%; min-height: 280px; border: none; background: transparent;
+  font-size: .94rem; line-height: 1.85; color: var(--text-dark); outline: none;
+  font-family: 'Space Grotesk', sans-serif; padding: 0;
+}
+.ws-note-area[contenteditable]:empty::before {
+  content: attr(data-placeholder); color: var(--text-light); pointer-events: none;
+}
+.ws-note-area h1 { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); line-height: 1.25; margin: .6rem 0 .3rem; }
+.ws-note-area h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-dark); line-height: 1.3; margin: .5rem 0 .25rem; }
+.ws-note-area h3 { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); line-height: 1.35; margin: .4rem 0 .2rem; }
+.ws-note-area p { margin: .1rem 0; }
+.ws-note-area strong, .ws-note-area b { font-weight: 700; }
+.ws-note-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem 1rem; color: var(--text-light); text-align: center; gap: .5rem; }
+@media (max-width: 600px) { .ws-notes-layout { flex-direction: column; } .ws-notes-list { width: 100%; min-width: 0; } }
+
+/* ── Modal ── */
+.ws-modal-bd { display: none; position: fixed; inset: 0; z-index: 800; background: rgba(0,0,0,.45); backdrop-filter: blur(3px); align-items: center; justify-content: center; padding: 1rem; }
+.ws-modal-bd.open { display: flex; }
+.ws-modal {
+  background: var(--bg-white); border-radius: var(--radius-lg); width: 100%; max-width: 490px;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+  animation: wsUp .22s ease; display: flex; flex-direction: column; max-height: 90vh; overflow: hidden;
+}
+@keyframes wsUp { from { opacity: 0; transform: translateY(20px) scale(.97); } to { opacity: 1; transform: none; } }
+.ws-modal-hd { display: flex; align-items: center; gap: .7rem; padding: 1rem 1.15rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.ws-modal-ic   { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; }
+.ws-modal-titl { flex: 1; font-size: .96rem; font-weight: 700; color: var(--text-dark); }
+.ws-modal-cls  { background: none; border: 1px solid var(--border); border-radius: 7px; width: 27px; height: 27px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-light); font-size: .8rem; transition: all .15s; }
+.ws-modal-cls:hover { border-color: #ef4444; color: #ef4444; }
+.ws-modal-body { overflow-y: auto; padding: 1rem 1.15rem; display: flex; flex-direction: column; gap: .78rem; }
+.ws-modal-ft   { display: flex; gap: .45rem; padding: .8rem 1.15rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+
+/* Form controls */
+.fg  { display: flex; flex-direction: column; gap: .22rem; }
+.fl  { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--text-light); }
+.fi, .fs, .fta {
+  border: 1.5px solid var(--border); border-radius: 9px; padding: .46rem .7rem;
+  font-size: .86rem; color: var(--text-dark); background: var(--bg);
+  outline: none; width: 100%; font-family: 'Space Grotesk', sans-serif; transition: border-color .15s;
+}
+.fi:focus, .fs:focus, .fta:focus { border-color: var(--pink); }
+.fta { resize: vertical; min-height: 70px; }
+.f2  { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+
+/* Effort selector */
+.eff-seg { display: flex; border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden; }
+.eff-btn { flex: 1; border: none; background: none; padding: .42rem; font-size: .74rem; font-weight: 700; cursor: pointer; color: var(--text-light); transition: all .13s; font-family: 'Space Grotesk', sans-serif; }
+.eff-btn.on { background: var(--pink); color: #fff; }
+.eff-btn:hover:not(.on) { background: var(--bg-card); color: var(--text-dark); }
+
+/* Progress range */
+.rng-wrap { display: flex; align-items: center; gap: .65rem; }
+.rng { flex: 1; accent-color: var(--pink); cursor: pointer; height: 6px; border-radius: 3px; }
+.rng-val { font-size: .83rem; font-weight: 700; color: var(--pink); min-width: 36px; text-align: right; }
+
+/* Buttons */
+.btn-p { flex: 1; background: var(--pink); color: #fff; border: none; border-radius: var(--radius-pill); padding: .54rem 1rem; font-size: .87rem; font-weight: 700; cursor: pointer; transition: opacity .15s; font-family: 'Space Grotesk', sans-serif; }
+.btn-p:hover { opacity: .87; }
+.btn-s { background: none; border: 1.5px solid var(--border); border-radius: var(--radius-pill); padding: .52rem .82rem; font-size: .85rem; color: var(--text-mid); cursor: pointer; transition: all .15s; font-family: 'Space Grotesk', sans-serif; }
+.btn-s:hover { border-color: var(--text-mid); color: var(--text-dark); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .ws-sb { position: fixed; left: 0; top: 0; height: 100%; z-index: 600; transform: translateX(-100%); box-shadow: 5px 0 28px rgba(0,0,0,.18); }
+  .ws-sb.open { transform: translateX(0); }
+  .ws-sb-close { display: flex !important; }
+  .ws-kanban { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 480px) {
+  .ws-content { padding: .7rem; }
+  .ws-kanban  { grid-template-columns: 1fr; }
+  .f2         { grid-template-columns: 1fr; }
+  .ws-doc-ti  { font-size: 1.2rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="ws-bd" id="wsBd" onclick="closeMob()"></div>
+
+<!-- Modal -->
+<div class="ws-modal-bd" id="wsMBd">
+  <div class="ws-modal">
+    <div class="ws-modal-hd">
+      <div class="ws-modal-ic" id="mIc"></div>
+      <span class="ws-modal-titl" id="mTitl">Add Item</span>
+      <button class="ws-modal-cls" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="ws-modal-body" id="mBody"></div>
+    <div class="ws-modal-ft">
+      <button class="btn-s" onclick="closeModal()">Cancel</button>
+      <button class="btn-p" id="mOk" onclick="submitModal()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Root -->
+<div class="ws-root">
+  <!-- Sidebar -->
+  <aside class="ws-sb" id="wsSb">
+    <div class="ws-sb-hd">
+      <span class="ws-sb-lbl">My Workspace</span>
+      <button class="ws-sb-close" onclick="closeMob()"><i class="bi bi-x-lg"></i></button>
+      <div style="position:relative;">
+        <button class="ws-new-btn" id="wsNewBtn" onclick="togglePicker()">
+          <i class="bi bi-plus-lg"></i> New
+        </button>
+        <div class="ws-picker" id="wsPicker">
+          <button class="ws-pick-opt" onclick="createDoc('todo')">
+            <span class="ws-pick-ic" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-check2-square"></i></span>To-Do List
+          </button>
+          <button class="ws-pick-opt" onclick="createDoc('project')">
+            <span class="ws-pick-ic" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-kanban"></i></span>Project Tracker
+          </button>
+          <button class="ws-pick-opt" onclick="createDoc('goal')">
+            <span class="ws-pick-ic" style="background:#f3e8ff;color:#7c3aed;"><i class="bi bi-bullseye"></i></span>Goal Tracker
+          </button>
+          <button class="ws-pick-opt" onclick="createDoc('note')">
+            <span class="ws-pick-ic" style="background:#fce7f3;color:#db2777;"><i class="bi bi-journal-text"></i></span>Notes
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Sidebar Search -->
+    <div class="ws-search-wrap">
+      <div class="ws-search-box">
+        <i class="bi bi-search"></i>
+        <input class="ws-search-inp" id="wsSbSearch" type="text" placeholder="Search docs & items…" oninput="filterSb(this.value)" onkeydown="if(event.key==='Escape'){this.value='';filterSb('');}">
+        <button class="ws-search-clear" id="wsSbClear" onclick="clearSearch()" style="display:none;">✕</button>
+      </div>
+    </div>
+    <div class="ws-sb-body" id="wsSbBody"></div>
+  </aside>
+
+  <!-- Main -->
+  <div class="ws-main">
+    <div class="ws-topbar">
+      <button class="ws-tog" onclick="toggleSb()"><i class="bi bi-layout-sidebar"></i></button>
+      <div style="flex:1;min-width:0;">
+        <div class="ws-tb-title" id="wsTbTitle">&nbsp;</div>
+        <div class="ws-tb-sub"   id="wsTbSub"></div>
+      </div>
+    </div>
+    <div class="ws-content" id="wsContent"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const WS = { docs: {{ docs_json|safe }}, activeId: null, sidebarOpen: window.innerWidth > 900, noteSaveTimer: null };
+const CSRF = () => document.querySelector('[name=csrfmiddlewaretoken]').value;
+const TM = {
+  todo:    { icon:'bi-check2-square', label:'To-Do List',      color:'#16a34a', bg:'#dcfce7' },
+  project: { icon:'bi-kanban',        label:'Project Tracker', color:'#2563eb', bg:'#dbeafe' },
+  goal:    { icon:'bi-bullseye',      label:'Goal Tracker',    color:'#7c3aed', bg:'#f3e8ff' },
+  note:    { icon:'bi-journal-text',  label:'Notes',           color:'#db2777', bg:'#fce7f3' },
+};
+const TASK_TYPE_COLORS = {
+  feature:  { bg:'#dbeafe', color:'#2563eb' },
+  bug:      { bg:'#fee2e2', color:'#dc2626' },
+  research: { bg:'#e0e7ff', color:'#4338ca' },
+  meeting:  { bg:'#dcfce7', color:'#16a34a' },
+  personal: { bg:'#fce7f3', color:'#db2777' },
+  other:    { bg:'var(--bg-card)', color:'var(--text-light)' },
+};
+const KB = [
+  { status:'todo',        label:'To Do',       color:'#64748b', dot:'#94a3b8' },
+  { status:'in_progress', label:'In Progress',  color:'#2563eb', dot:'#3b82f6' },
+  { status:'done',        label:'Done',         color:'#16a34a', dot:'#22c55e' },
+  { status:'blocked',     label:'Blocked',      color:'#dc2626', dot:'#ef4444' },
+];
+
+/* ── Init ── */
+function init() {
+  const s = parseInt(localStorage.getItem('ws_active')) || null;
+  if (s && WS.docs.find(d => d.pk === s)) WS.activeId = s;
+  renderSb(); renderMain();
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#wsNewBtn') && !e.target.closest('#wsPicker'))
+      document.getElementById('wsPicker').classList.remove('open');
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) { closeMob(); WS.sidebarOpen = true; document.getElementById('wsSb').classList.remove('ws-sb-collapsed'); document.getElementById('wsSb').style.display = ''; }
+  });
+}
+
+/* ── Sidebar ── */
+function renderSb(filter) {
+  const q = (filter !== undefined ? filter : (document.getElementById('wsSbSearch')?.value || '')).toLowerCase().trim();
+  let html = '';
+  ['todo','project','goal','note'].forEach(type => {
+    const docs = WS.docs.filter(d => d.type === type);
+    if (!docs.length) return;
+    let groupHtml = '';
+    docs.forEach(doc => {
+      // Title match
+      const titleMatch = !q || doc.title.toLowerCase().includes(q);
+      // Item hits
+      const itemHits = q.length >= 2 ? doc.items.filter(i => i.content.toLowerCase().includes(q)).slice(0,3) : [];
+      if (!titleMatch && !itemHits.length) return;
+      const hl = t => q ? t.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark>$1</mark>') : esc(t);
+      groupHtml += `<button class="ws-doc-btn ${doc.pk === WS.activeId ? 'active' : ''}" onclick="selDoc(${doc.pk})">
+        <span class="ws-dot" style="background:${TM[doc.type].color};"></span>
+        <span class="ws-doc-name">${hl(doc.title)}</span>
+      </button>`;
+      if (itemHits.length) {
+        itemHits.forEach(i => {
+          groupHtml += `<span class="ws-hit" onclick="selDoc(${doc.pk})">${hl(esc(i.content))}</span>`;
+        });
+      }
+    });
+    if (!groupHtml) return;
+    html += `<div class="ws-grp-lbl">${TM[type].label}</div>` + groupHtml;
+  });
+  document.getElementById('wsSbBody').innerHTML = html ||
+    `<div style="padding:.7rem 1rem;font-size:.8rem;color:var(--text-light);">${q ? 'No results for "'+esc(q)+'".' : 'No docs yet.<br>Click + New to start.'}</div>`;
+}
+
+function filterSb(q) {
+  renderSb(q);
+  const clr = document.getElementById('wsSbClear');
+  if (clr) clr.style.display = q ? 'block' : 'none';
+}
+function clearSearch() {
+  const inp = document.getElementById('wsSbSearch');
+  if (inp) inp.value = '';
+  filterSb('');
+  inp?.focus();
+}
+
+function toggleSb() {
+  WS.sidebarOpen = !WS.sidebarOpen;
+  const sb = document.getElementById('wsSb'), bd = document.getElementById('wsBd');
+  if (window.innerWidth <= 900) { sb.classList.toggle('open', WS.sidebarOpen); bd.classList.toggle('on', WS.sidebarOpen); }
+  else { sb.classList.toggle('ws-sb-collapsed', !WS.sidebarOpen); }
+}
+function closeMob() {
+  WS.sidebarOpen = false;
+  document.getElementById('wsSb').classList.remove('open');
+  document.getElementById('wsBd').classList.remove('on');
+}
+function togglePicker() { document.getElementById('wsPicker').classList.toggle('open'); }
+function selDoc(pk) {
+  WS.activeId = pk; localStorage.setItem('ws_active', pk);
+  // Reset note state when switching docs
+  if (NOTE.docPk !== pk) NOTE = { docPk: null, itemPk: null };
+  renderSb(); renderMain();
+  if (window.innerWidth <= 900) closeMob();
+}
+
+/* ── Main render ── */
+function renderMain() {
+  const doc = WS.docs.find(d => d.pk === WS.activeId);
+  document.getElementById('wsTbTitle').innerHTML = doc ? esc(doc.title) : '&nbsp;';
+  document.getElementById('wsTbSub').textContent  = doc ? TM[doc.type].label : '';
+  if (!doc) { renderWelcome(); return; }
+  if      (doc.type === 'todo')    renderTodo(doc);
+  else if (doc.type === 'project') renderProject(doc);
+  else if (doc.type === 'goal')    renderGoal(doc);
+  else if (doc.type === 'note')    renderNote(doc);
+}
+
+function renderWelcome() {
+  document.getElementById('wsContent').innerHTML = `
+    <div class="ws-welcome">
+      <div class="ws-wel-ic"><i class="bi bi-journals"></i></div>
+      <h2 style="font-size:1.4rem;font-weight:800;color:var(--text-dark);margin-bottom:.3rem;">Your Personal Workspace</h2>
+      <p style="color:var(--text-light);max-width:330px;margin-bottom:1.5rem;">Organize tasks, projects, goals and notes — all in one place.</p>
+      <div class="ws-type-grid">
+        ${Object.entries(TM).map(([t,m]) => `
+          <div class="ws-tc" onclick="createDoc('${t}')">
+            <div class="ws-tc-ic" style="background:${m.bg};color:${m.color};"><i class="bi ${m.icon}"></i></div>
+            <div class="ws-tc-name">${m.label}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function docHdr(doc) {
+  const m = TM[doc.type];
+  return `<div class="ws-doc-hd">
+    <div class="ws-doc-ic" style="background:${m.bg};color:${m.color};"><i class="bi ${m.icon}"></i></div>
+    <input class="ws-doc-ti" value="${esc(doc.title)}" placeholder="Untitled" onchange="saveDocTitle(${doc.pk},this.value)">
+    <button class="ws-add-btn" id="wsAddBtn" onclick="openAdd(${doc.pk})"><i class="bi bi-plus-lg"></i> Add</button>
+    <button class="ws-del-doc" onclick="deleteDoc(${doc.pk})"><i class="bi bi-trash3"></i></button>
+  </div>`;
+}
+
+/* ── TODO ── */
+function renderTodo(doc) {
+  const done = doc.items.filter(i => i.is_done).length, total = doc.items.length;
+  const pct  = total ? Math.round(done / total * 100) : 0;
+  const prog = total ? `<div class="ws-prog">
+    <div class="ws-prog-track"><div class="ws-prog-fill" style="width:${pct}%;background:linear-gradient(90deg,#16a34a,#22c55e);"></div></div>
+    <div class="ws-prog-lbl">${done} of ${total} done &middot; ${pct}%</div>
+  </div>` : '';
+  document.getElementById('wsContent').innerHTML =
+    `${docHdr(doc)}${prog}<div id="wsList">${doc.items.map(i => todoRow(i, doc.pk)).join('')}</div>`;
+}
+function todoRow(item, docPk) {
+  const today = new Date().toISOString().slice(0,10), ov = item.due_date && item.due_date < today && !item.is_done;
+  const due   = item.due_date ? `<span class="wb ${ov?'wb-overdue':'wb-due'}"><i class="bi bi-${ov?'alarm-fill':'calendar3'}"></i> ${item.due_date}</span>` : '';
+  const pc    = { high:'wb-high', medium:'wb-medium', low:'wb-low' }[item.priority] || 'wb-medium';
+  return `<div class="ws-todo-row" id="ti-${item.pk}">
+    <button class="ws-chk ${item.is_done?'done':''}" onclick="toggleDone(${item.pk},${docPk},${!item.is_done})">
+      <i class="bi bi-${item.is_done?'check-circle-fill':'circle'}"></i>
+    </button>
+    <span class="ws-item-lbl ${item.is_done?'done-text':''}" onclick="openEdit(${item.pk},${docPk})">${esc(item.content)}</span>
+    <span class="wb ${pc}">${item.priority}</span>${due}
+    <div class="ws-row-acts">
+      <button class="ws-act" onclick="openEdit(${item.pk},${docPk})" title="Edit"><i class="bi bi-pencil"></i></button>
+      <button class="ws-act del" onclick="delItem(${item.pk},${docPk})" title="Delete"><i class="bi bi-trash3"></i></button>
+    </div>
+  </div>`;
+}
+
+/* ── PROJECT (with HTML5 DnD) ── */
+function renderProject(doc) {
+  const cols = KB.map(col => {
+    const its = doc.items.filter(i => i.status === col.status);
+    return `<div class="ws-kb-col" data-status="${col.status}"
+      ondragover="event.preventDefault();this.classList.add('dnd-over');"
+      ondragleave="this.classList.remove('dnd-over');"
+      ondrop="dndDrop(event,'${col.status}',${doc.pk})">
+      <div class="ws-kb-col-title" style="color:${col.color};">
+        <span class="ws-kb-dot" style="background:${col.dot};"></span>${col.label}
+        <span class="ws-kb-count">${its.length}</span>
+      </div>
+      ${its.map(i => projCard(i, doc.pk)).join('')}
+      <button class="ws-kb-add" onclick="openAdd(${doc.pk},'${col.status}')">
+        <i class="bi bi-plus"></i> Add card
+      </button>
+    </div>`;
+  }).join('');
+  document.getElementById('wsContent').innerHTML = `${docHdr(doc)}<div class="ws-kanban">${cols}</div>`;
+  const ab = document.getElementById('wsAddBtn');
+  if (ab) ab.style.display = 'none';
+}
+function projCard(item, docPk) {
+  const today = new Date().toISOString().slice(0,10), ov = item.due_date && item.due_date < today;
+  const pc    = { high:'wb-high', medium:'wb-medium', low:'wb-low' }[item.priority] || 'wb-medium';
+  const due   = item.due_date ? `<span class="wb ${ov?'wb-overdue':'wb-due'}"><i class="bi bi-${ov?'alarm-fill':'calendar3'}"></i> ${item.due_date}</span>` : '';
+  const prog  = item.progress || 0;
+  return `<div class="ws-proj-card" draggable="true"
+    onclick="openEdit(${item.pk},${docPk})"
+    ondragstart="dndStart(event,${item.pk})"
+    ondragend="dndEnd(event)">
+    <button class="ws-card-del" onclick="event.stopPropagation();delItem(${item.pk},${docPk})" title="Delete card"><i class="bi bi-trash3"></i></button>
+    <div class="ws-card-name">${esc(item.content)}</div>
+    <div class="ws-card-meta"><span class="wb ${pc}">${item.priority}</span>${due}<span class="wb wb-prog">${prog}%</span></div>
+    <div class="ws-card-pt"><span>Progress</span><span>${prog}%</span></div>
+    <div class="ws-card-track"><div class="ws-card-fill" style="width:${prog}%;"></div></div>
+  </div>`;
+}
+
+let DND_ITEM_PK = null;
+function dndStart(e, pk) {
+  DND_ITEM_PK = pk;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', pk);
+  setTimeout(() => e.target.classList.add('dnd-dragging'), 0);
+}
+function dndEnd(e) { e.target.classList.remove('dnd-dragging'); }
+function dndDrop(e, newStatus, docPk) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dnd-over');
+  const pk = DND_ITEM_PK; DND_ITEM_PK = null;
+  if (!pk) return;
+  const doc = WS.docs.find(d => d.pk === docPk);
+  if (!doc) return;
+  const item = doc.items.find(i => i.pk === pk);
+  if (!item || item.status === newStatus) return;
+  item.status = newStatus;
+  api(`/workspace/item/${pk}/update/`, { status: newStatus });
+  renderProject(doc);
+}
+
+/* ── GOAL (overhauled) ── */
+function renderGoal(doc) {
+  const done = doc.items.filter(i => i.is_done).length, total = doc.items.length;
+  const pct  = total ? Math.round(done / total * 100) : 0;
+  const prog = total ? `<div class="ws-prog">
+    <div class="ws-prog-track"><div class="ws-prog-fill" style="width:${pct}%;background:linear-gradient(90deg,#7c3aed,#ec4899);"></div></div>
+    <div class="ws-prog-lbl">${done} of ${total} goals completed &middot; <strong>${pct}%</strong></div>
+  </div>` : '';
+  document.getElementById('wsContent').innerHTML =
+    `${docHdr(doc)}${prog}<div id="wsList">${doc.items.map(i => goalCard(i, doc.pk)).join('')}</div>`;
+}
+function goalCard(item, docPk) {
+  const today = new Date().toISOString().slice(0,10);
+  const ov    = item.due_date && item.due_date < today && !item.is_done;
+  const pc    = { high:'wb-high', medium:'wb-medium', low:'wb-low' }[item.priority] || 'wb-medium';
+  const due   = item.due_date ? `<span class="wb ${ov?'wb-overdue':'wb-due'}"><i class="bi bi-${ov?'alarm-fill':'calendar3'}"></i> ${item.due_date}</span>` : '';
+  const eff   = item.effort && item.effort !== 'm' ? `<span class="wb wb-effort">${item.effort.toUpperCase()}</span>` : '';
+  const prog  = item.progress || 0;
+
+  // Category chip
+  const tc    = TASK_TYPE_COLORS[item.task_type] || TASK_TYPE_COLORS.other;
+  const chip  = item.task_type ? `<span class="ws-goal-chip" style="background:${tc.bg};color:${tc.color};">${item.task_type}</span>` : '';
+
+  // Timeline
+  let tlHtml = '';
+  if (item.start_date && item.due_date) {
+    const start = new Date(item.start_date), end = new Date(item.due_date), now = new Date(today);
+    const total = Math.max(end - start, 1), elapsed = Math.min(Math.max(now - start, 0), total);
+    const pct = Math.round(elapsed / total * 100);
+    tlHtml = `<div class="ws-goal-timeline">
+      <span style="white-space:nowrap;">${item.start_date}</span>
+      <div class="ws-goal-tl-bar"><div class="ws-goal-tl-fill" style="width:${pct}%;"></div></div>
+      <span style="white-space:nowrap;">${item.due_date}</span>
+    </div>`;
+  }
+
+  // Per-item progress bar
+  const progBar = prog > 0 ? `<div class="ws-goal-prog">
+    <div class="ws-goal-prog-label"><span>Progress</span><span>${prog}%</span></div>
+    <div class="ws-goal-prog-track"><div class="ws-goal-prog-fill" style="width:${prog}%;"></div></div>
+  </div>` : '';
+
+  return `<div class="ws-goal-card" id="gi-${item.pk}">
+    <div class="ws-goal-card-top">
+      <button class="ws-goal-chk ${item.is_done?'done':''}" onclick="toggleDone(${item.pk},${docPk},${!item.is_done})">
+        ${item.is_done ? '<i class="bi bi-check"></i>' : ''}
+      </button>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:flex-start;gap:.4rem;flex-wrap:wrap;">
+          <span class="ws-goal-name ${item.is_done?'done-text':''}" onclick="openEdit(${item.pk},${docPk})">${esc(item.content)}</span>
+        </div>
+        <div class="ws-goal-chips">
+          ${chip}<span class="wb ${pc}">${item.priority}</span>${eff}${due}
+        </div>
+        ${progBar}${tlHtml}
+      </div>
+      <button class="ws-act del" onclick="delItem(${item.pk},${docPk})" title="Delete"><i class="bi bi-trash3"></i></button>
+    </div>
+  </div>`;
+}
+
+/* ── NOTE ── */
+let NOTE = { docPk: null, itemPk: null }; // active note
+
+function renderNote(doc) {
+  // Auto-select first note if none active for this doc
+  if (doc.items.length && (NOTE.docPk !== doc.pk || !NOTE.itemPk)) {
+    NOTE = { docPk: doc.pk, itemPk: doc.items[0].pk };
+  }
+  // Build list sidebar — use description as title, fall back to body text preview
+  const listHtml = doc.items.map(i => {
+    const title = (i.description && i.description.trim()) ? i.description.trim().slice(0, 40) :
+                  (i.content ? i.content.replace(/<[^>]*>/g, '').trim().slice(0, 40) : '') || 'Untitled';
+    const isActive = i.pk === NOTE.itemPk && NOTE.docPk === doc.pk;
+    return `<div class="ws-note-item ${isActive ? 'active' : ''}" onclick="openNote(${i.pk},${doc.pk})">
+      <button class="ws-note-del" onclick="event.stopPropagation();delNoteItem(${i.pk},${doc.pk})" title="Delete note"><i class="bi bi-x-lg"></i></button>
+      <div class="ws-note-item-title">${esc(title)}</div>
+    </div>`;
+  }).join('');
+
+  // Build editor area
+  let editorHtml;
+  if (NOTE.docPk === doc.pk && NOTE.itemPk) {
+    const item = doc.items.find(i => i.pk === NOTE.itemPk);
+    if (item) {
+      editorHtml = `
+        <div class="ws-note-editor-card">
+          <input
+            class="ws-note-title-inp"
+            id="wsNoteTitleEl"
+            value="${esc(item.description || '')}"
+            placeholder="Note title…"
+            oninput="schedNote(${doc.pk},${item.pk})"
+          >
+          <div class="ws-note-toolbar">
+            <button class="ws-note-fmt-btn" id="fmtBold" title="Bold (Ctrl+B)" onclick="noteFmt('bold')"><b>B</b></button>
+            <div class="ws-note-fmt-sep"></div>
+            <button class="ws-note-fmt-btn" title="Heading 1" onclick="noteFmt('h1')">H1</button>
+            <button class="ws-note-fmt-btn" title="Heading 2" onclick="noteFmt('h2')">H2</button>
+            <button class="ws-note-fmt-btn" title="Heading 3" onclick="noteFmt('h3')">H3</button>
+            <div class="ws-note-fmt-sep"></div>
+            <button class="ws-note-fmt-btn" title="Normal text" onclick="noteFmt('p')" style="font-size:.7rem;width:36px;">Text</button>
+            <span class="ws-note-status" id="wsNoteSt">Auto-saved</span>
+            <button class="ws-note-save-btn" onclick="saveNoteNow()"><i class="bi bi-floppy"></i> Save</button>
+          </div>
+          <div
+            class="ws-note-area"
+            id="wsNoteEl"
+            contenteditable="true"
+            data-placeholder="Start writing…"
+            oninput="schedNote(${doc.pk},${item.pk})"
+          >${item.content || ''}</div>
+        </div>`;
+    } else {
+      NOTE.itemPk = null; editorHtml = noteEmptyState(doc.pk);
+    }
+  } else {
+    NOTE.itemPk = null; editorHtml = noteEmptyState(doc.pk);
+  }
+
+  document.getElementById('wsContent').innerHTML = `${docHdr(doc)}
+    <div class="ws-notes-layout">
+      <div class="ws-notes-list">
+        ${listHtml}
+        <button class="ws-note-new" onclick="newNote(${doc.pk})"><i class="bi bi-plus"></i> New note</button>
+      </div>
+      <div class="ws-note-editor" id="wsNoteEditor">${editorHtml}</div>
+    </div>`;
+
+  const ab = document.getElementById('wsAddBtn');
+  if (ab) ab.style.display = 'none';
+  // Focus the title input on open
+  const titleEl = document.getElementById('wsNoteTitleEl');
+  if (titleEl) titleEl.focus();
+
+  // Keyboard shortcut: Ctrl+B for bold
+  const noteEl = document.getElementById('wsNoteEl');
+  if (noteEl) {
+    noteEl.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') { e.preventDefault(); noteFmt('bold'); }
+    });
+    // Update toolbar active states on selection change
+    document.addEventListener('selectionchange', updateFmtBtns);
+  }
+}
+
+function noteFmt(cmd) {
+  const area = document.getElementById('wsNoteEl');
+  if (!area) return;
+  area.focus();
+
+  if (cmd === 'bold') {
+    document.execCommand('bold', false, null);
+  } else if (cmd === 'p') {
+    document.execCommand('formatBlock', false, 'p');
+    // DOM fallback: manually replace remaining heading tags in the selection
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount) {
+      let node = sel.getRangeAt(0).commonAncestorContainer;
+      if (node.nodeType === 3) node = node.parentNode;
+      while (node && node !== area) {
+        if (/^H[1-6]$/.test(node.nodeName)) {
+          const p = document.createElement('p');
+          p.innerHTML = node.innerHTML;
+          node.parentNode.replaceChild(p, node);
+          const range = document.createRange();
+          range.selectNodeContents(p);
+          range.collapse(false);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          break;
+        }
+        node = node.parentNode;
+      }
+    }
+  } else {
+    document.execCommand('formatBlock', false, cmd);
+  }
+
+  updateFmtBtns();
+  // Trigger auto-save
+  if (NOTE.itemPk && NOTE.docPk) schedNote(NOTE.docPk, NOTE.itemPk);
+}
+
+function updateFmtBtns() {
+  // Only highlight bold when cursor is actually inside the note editor
+  const area = document.getElementById('wsNoteEl');
+  const bb   = document.getElementById('fmtBold');
+  if (!bb) return;
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !area) { bb.classList.remove('active'); return; }
+  const inEditor = area.contains(sel.getRangeAt(0).commonAncestorContainer);
+  bb.classList.toggle('active', inEditor && document.queryCommandState('bold'));
+}
+
+function noteEmptyState(docPk) {
+  return `<div class="ws-note-empty">
+    <i class="bi bi-journal-text" style="font-size:2rem;color:var(--text-light);"></i>
+    <div style="font-size:.9rem;font-weight:600;color:var(--text-dark);">No note selected</div>
+    <div style="font-size:.8rem;">Pick one from the list or create a new one.</div>
+    <button class="ws-note-save-btn" style="margin-top:.4rem;" onclick="newNote(${docPk})"><i class="bi bi-plus"></i> New note</button>
+  </div>`;
+}
+
+function openNote(itemPk, docPk) {
+  NOTE = { docPk, itemPk };
+  const doc = WS.docs.find(d => d.pk === docPk);
+  if (doc) renderNote(doc);
+}
+
+async function newNote(docPk) {
+  const d = await api(`/workspace/doc/${docPk}/item/`, { content: '', description: '', status: 'todo', priority: 'medium' });
+  if (d.ok) {
+    const newItemPk = d.item.pk;
+    NOTE = { docPk, itemPk: newItemPk };
+    await syncAndRender();
+    // After sync, the new note might be rendered — re-focus note if we're on a note doc
+    const doc = WS.docs.find(d => d.pk === docPk);
+    if (doc && doc.type === 'note') renderNote(doc);
+  }
+}
+
+async function delNoteItem(itemPk, docPk) {
+  if (!confirm('Delete this note?')) return;
+  await api(`/workspace/item/${itemPk}/delete/`, {});
+  // Pick next note to show before syncing
+  const doc = WS.docs.find(d => d.pk === docPk);
+  if (doc) {
+    const remaining = doc.items.filter(i => i.pk !== itemPk);
+    NOTE.itemPk = remaining.length ? remaining[0].pk : null;
+  }
+  await syncAndRender();
+  const doc2 = WS.docs.find(d => d.pk === docPk);
+  if (doc2 && doc2.type === 'note') renderNote(doc2);
+}
+
+let _noteSaveTimer = null;
+function schedNote(docPk, itemPk) {
+  const st = document.getElementById('wsNoteSt');
+  if (st) st.textContent = 'Unsaved…';
+  clearTimeout(_noteSaveTimer);
+  _noteSaveTimer = setTimeout(() => saveNote(docPk, itemPk), 1200);
+}
+
+async function saveNoteNow() {
+  if (!NOTE.itemPk) return;
+  await saveNote(NOTE.docPk, NOTE.itemPk);
+}
+
+async function saveNote(docPk, itemPk) {
+  const area  = document.getElementById('wsNoteEl');
+  const titleEl = document.getElementById('wsNoteTitleEl');
+  if (!area) return;
+  const bodyVal  = area.innerHTML;
+  const titleVal = titleEl ? titleEl.value.trim() : '';
+  const doc  = WS.docs.find(d => d.pk === docPk);
+  if (!doc) return;
+  const item = doc.items.find(i => i.pk === itemPk);
+  const st   = document.getElementById('wsNoteSt');
+  if (st) st.textContent = 'Saving…';
+  if (item) {
+    item.content     = bodyVal;
+    item.description = titleVal;
+    await api(`/workspace/item/${itemPk}/update/`, { content: bodyVal, description: titleVal });
+    if (st) st.textContent = 'Saved ✓';
+    setTimeout(() => { if (document.getElementById('wsNoteSt')) document.getElementById('wsNoteSt').textContent = 'Auto-saved'; }, 1800);
+    // Update sidebar list title live
+    const noteItem = document.querySelector(`.ws-note-item.active .ws-note-item-title`);
+    if (noteItem) noteItem.textContent = titleVal || (area.innerText.trim().slice(0, 40) || 'Untitled');
+  }
+}
+
+/* ── Modal ── */
+let MODAL = { mode:'add', docPk:null, itemPk:null };
+let G_EFF = 'm';
+
+function openAdd(docPk, initStatus) {
+  MODAL = { mode:'add', docPk, itemPk:null }; G_EFF = 'm';
+  const doc = WS.docs.find(d => d.pk === docPk);
+  if (!doc) return;
+  setMIc(TM[doc.type]);
+  document.getElementById('mTitl').textContent = `Add to ${TM[doc.type].label}`;
+  document.getElementById('mOk').textContent = 'Add';
+  document.getElementById('mBody').innerHTML = buildFields(doc.type, null);
+  bindEff('m'); bindRng();
+  if (initStatus) { const s = document.getElementById('mStatus'); if (s) s.value = initStatus; }
+  document.getElementById('wsMBd').classList.add('open');
+  document.getElementById('mName')?.focus();
+}
+function openEdit(itemPk, docPk) {
+  const doc = WS.docs.find(d => d.pk === docPk), item = doc?.items.find(i => i.pk === itemPk);
+  if (!item) return;
+  MODAL = { mode:'edit', docPk, itemPk }; G_EFF = item.effort || 'm';
+  setMIc(TM[doc.type]);
+  document.getElementById('mTitl').textContent = 'Edit Item';
+  document.getElementById('mOk').textContent = 'Save';
+  document.getElementById('mBody').innerHTML = buildFields(doc.type, item);
+  bindEff(G_EFF); bindRng();
+  document.getElementById('wsMBd').classList.add('open');
+}
+function setMIc(m) {
+  const el = document.getElementById('mIc');
+  el.innerHTML = `<i class="bi ${m.icon}"></i>`; el.style.background = m.bg; el.style.color = m.color;
+}
+function closeModal() { document.getElementById('wsMBd').classList.remove('open'); }
+
+function buildFields(type, item) {
+  const v  = f => item ? (item[f] || '') : '';
+  const priOpts = ['high','medium','low'].map(p =>
+    `<option value="${p}" ${(item?.priority===p||(!item&&p==='medium'))?'selected':''}>${p[0].toUpperCase()+p.slice(1)}</option>`).join('');
+  const statOpts = [
+    ['todo','To Do'], ['in_progress','In Progress'], ['done','Done'], ['blocked','Blocked']
+  ].map(([val, lbl]) =>
+    `<option value="${val}" ${(item?.status===val||(!item&&val==='todo'))?'selected':''}>${lbl}</option>`).join('');
+
+  if (type === 'todo') return `
+    <div class="fg"><label class="fl">Task Name *</label>
+      <input id="mName" class="fi" value="${esc(v('content'))}" placeholder="What needs to be done?" required></div>
+    <div class="f2">
+      <div class="fg"><label class="fl">Priority</label><select id="mPriority" class="fs">${priOpts}</select></div>
+      <div class="fg"><label class="fl">Due Date</label><input id="mDueDate" type="date" class="fi" value="${v('due_date')}"></div>
+    </div>
+    <div class="fg"><label class="fl">Description</label>
+      <textarea id="mDesc" class="fta" placeholder="Add details…">${esc(v('description'))}</textarea></div>`;
+
+  if (type === 'project') return `
+    <div class="fg"><label class="fl">Task Name *</label>
+      <input id="mName" class="fi" value="${esc(v('content'))}" placeholder="What are you working on?" required></div>
+    <div class="f2">
+      <div class="fg"><label class="fl">Priority</label><select id="mPriority" class="fs">${priOpts}</select></div>
+      <div class="fg"><label class="fl">Status</label><select id="mStatus" class="fs">${statOpts}</select></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label class="fl">Start Date</label><input id="mStartDate" type="date" class="fi" value="${v('start_date')}"></div>
+      <div class="fg"><label class="fl">End Date</label><input id="mDueDate" type="date" class="fi" value="${v('due_date')}"></div>
+    </div>
+    <div class="fg"><label class="fl">Progress &mdash; <span id="rLbl">${item?item.progress||0:0}%</span></label>
+      <div class="rng-wrap">
+        <input id="mProgress" type="range" min="0" max="100" class="rng" value="${item?item.progress||0:0}"
+               oninput="updRng(this.value)">
+        <span class="rng-val" id="rBdg">${item?item.progress||0:0}%</span>
+      </div></div>
+    <div class="fg"><label class="fl">Description</label>
+      <textarea id="mDesc" class="fta" placeholder="Notes about this task…">${esc(v('description'))}</textarea></div>`;
+
+  if (type === 'goal') {
+    const ttOpts = ['feature','bug','research','meeting','personal','other'].map(t =>
+      `<option value="${t}" ${(item?.task_type===t)?'selected':''}>${t[0].toUpperCase()+t.slice(1)}</option>`).join('');
+    return `
+    <div class="fg"><label class="fl">Goal *</label>
+      <input id="mName" class="fi" value="${esc(v('content'))}" placeholder="What do you want to achieve?" required></div>
+    <div class="f2">
+      <div class="fg"><label class="fl">Category</label><select id="mTaskType" class="fs">${ttOpts}</select></div>
+      <div class="fg"><label class="fl">Priority</label><select id="mPriority" class="fs">${priOpts}</select></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label class="fl">Start Date</label><input id="mStartDate" type="date" class="fi" value="${v('start_date')}"></div>
+      <div class="fg"><label class="fl">Due Date</label><input id="mDueDate" type="date" class="fi" value="${v('due_date')}"></div>
+    </div>
+    <div class="fg"><label class="fl">Progress &mdash; <span id="rLbl">${item?item.progress||0:0}%</span></label>
+      <div class="rng-wrap">
+        <input id="mProgress" type="range" min="0" max="100" class="rng" value="${item?item.progress||0:0}" oninput="updRng(this.value)">
+        <span class="rng-val" id="rBdg">${item?item.progress||0:0}%</span>
+      </div></div>
+    <div class="fg"><label class="fl">Effort Level</label>
+      <div class="eff-seg">
+        ${['xs','s','m','l','xl'].map(e => `<button class="eff-btn" data-e="${e}" onclick="bindEff('${e}')">${e.toUpperCase()}</button>`).join('')}
+      </div></div>
+    <div class="fg"><label class="fl">Description</label>
+      <textarea id="mDesc" class="fta" placeholder="Notes about this goal…">${esc(v('description'))}</textarea></div>`;
+  }
+
+  return `<div class="fg"><label class="fl">Title *</label>
+    <input id="mName" class="fi" value="${esc(v('content'))}" placeholder="Name…" required></div>`;
+}
+
+function bindEff(val) {
+  G_EFF = val;
+  document.querySelectorAll('.eff-btn').forEach(b => b.classList.toggle('on', b.dataset.e === val));
+}
+function updRng(val) {
+  const v = val + '%';
+  const l = document.getElementById('rLbl'), b = document.getElementById('rBdg');
+  if (l) l.textContent = v; if (b) b.textContent = v;
+}
+function bindRng() {
+  const r = document.getElementById('mProgress');
+  if (r) r.oninput = () => updRng(r.value);
+}
+
+async function submitModal() {
+  const { mode, docPk, itemPk } = MODAL;
+  const nm = document.getElementById('mName');
+  if (nm && !nm.value.trim()) { nm.focus(); nm.style.borderColor = '#ef4444'; return; }
+  const payload = {
+    content:     nm?.value.trim() || '',
+    description: document.getElementById('mDesc')?.value || '',
+    priority:    document.getElementById('mPriority')?.value || 'medium',
+    status:      document.getElementById('mStatus')?.value || 'todo',
+    task_type:   document.getElementById('mTaskType')?.value || '',
+    start_date:  document.getElementById('mStartDate')?.value || null,
+    due_date:    document.getElementById('mDueDate')?.value || null,
+    progress:    parseInt(document.getElementById('mProgress')?.value || 0),
+    effort:      G_EFF,
+  };
+  const btn = document.getElementById('mOk'); btn.textContent = 'Saving…'; btn.disabled = true;
+  if (mode === 'add') { await api(`/workspace/doc/${docPk}/item/`, payload); }
+  else                { await api(`/workspace/item/${itemPk}/update/`, payload); }
+  btn.textContent = mode === 'add' ? 'Add' : 'Save'; btn.disabled = false;
+  closeModal();
+  await syncAndRender();
+}
+
+/* ── CRUD ── */
+async function createDoc(type) {
+  document.getElementById('wsPicker').classList.remove('open');
+  const m = TM[type];
+  const d = await api('/workspace/doc/create/', { type, title: `New ${m.label}`, color: m.color });
+  if (d.ok) {
+    const newPk = d.doc.pk;
+    await syncAndRender();
+    // Select the newly created doc
+    WS.activeId = newPk;
+    localStorage.setItem('ws_active', newPk);
+    renderSb(); renderMain();
+    setTimeout(() => document.querySelector('.ws-doc-ti')?.focus(), 80);
+  }
+}
+
+/* ── Server Sync ── */
+async function syncAndRender() {
+  try {
+    const r = await fetch('/workspace/sync/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+    const data = await r.json();
+    if (data.ok) {
+      // Preserve habit_logs and note content that was already in local state
+      data.docs.forEach(serverDoc => {
+        const localDoc = WS.docs.find(d => d.pk === serverDoc.pk);
+        if (localDoc) {
+          serverDoc.items.forEach(serverItem => {
+            const localItem = localDoc.items.find(i => i.pk === serverItem.pk);
+            // Keep habit_logs from server (already included for habit docs)
+            // Nothing extra needed — server data is authoritative
+          });
+        }
+      });
+      WS.docs = data.docs;
+    }
+  } catch(e) {
+    console.warn('WS sync failed, rendering from local state:', e);
+  }
+  renderSb();
+  renderMain();
+}
+
+async function saveDocTitle(pk, val) {
+  const d = WS.docs.find(d => d.pk === pk);
+  if (d) { d.title = val; renderSb(); }  // optimistic
+  await api(`/workspace/doc/${pk}/update/`, { title: val });
+  // No full sync needed for title-only change — already updated locally
+}
+async function deleteDoc(pk) {
+  if (!confirm('Delete this doc and all its items?')) return;
+  await api(`/workspace/doc/${pk}/delete/`, {});
+  if (WS.activeId === pk) WS.activeId = null;
+  await syncAndRender();
+}
+async function toggleDone(pk, docPk, done) {
+  // Optimistic: flip locally for immediate feel
+  const doc = WS.docs.find(d => d.pk === docPk), it = doc?.items.find(i => i.pk === pk);
+  if (!it) return;
+  it.is_done = done;
+  renderMain();                         // instant visual feedback
+  await api(`/workspace/item/${pk}/update/`, { is_done: done });
+  await syncAndRender();                // confirm with server state
+}
+async function delItem(pk, docPk) {
+  if (!confirm('Delete this item?')) return;
+  // Optimistic removal
+  const doc = WS.docs.find(d => d.pk === docPk);
+  if (doc) doc.items = doc.items.filter(i => i.pk !== pk);
+  renderMain();
+  await api(`/workspace/item/${pk}/delete/`, {});
+  await syncAndRender();
+}
+async function api(url, body) {
+  try {
+    const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json','X-CSRFToken':CSRF()}, body: JSON.stringify(body) });
+    return await r.json();
+  } catch(e) { console.error('WS API', e); return { ok: false }; }
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+init();
+</script>
+{% endblock %}

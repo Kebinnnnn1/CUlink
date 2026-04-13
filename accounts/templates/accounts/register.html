@@ -1,0 +1,216 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Create Account — CUlink{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-split {
+    min-height: 90vh;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .auth-split-left {
+    flex: 0 0 42%;
+    background: var(--bg-dark);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 4rem 3.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .auth-split-left::after {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -20%;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(255,63,164,0.2), transparent 60%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .split-left-logo {
+    width: 48px; height: 48px;
+    background: var(--pink);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; color: #fff;
+    margin-bottom: 2.5rem;
+    position: relative; z-index: 1;
+  }
+
+  .split-left-title {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #fff;
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    position: relative; z-index: 1;
+  }
+
+  .split-left-desc {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    position: relative; z-index: 1;
+  }
+
+  .split-perks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    position: relative; z-index: 1;
+  }
+
+  .split-perk {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .split-perk-icon {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    color: var(--pink);
+  }
+
+  .auth-split-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: var(--bg-white);
+  }
+
+  .auth-form-box {
+    width: 100%;
+    max-width: 400px;
+    animation: fadeInRight 0.6s ease both;
+  }
+
+  .auth-form-box h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text-dark);
+    margin-bottom: 0.4rem;
+  }
+
+  .auth-form-box .sub {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .auth-form-box .sub a { color: var(--pink); font-weight: 600; text-decoration: none; }
+  .auth-form-box .sub a:hover { text-decoration: underline; }
+
+  .field-error { color: #dc2626; font-size: 0.8rem; margin-top: 0.3rem; }
+
+  @media (max-width: 768px) {
+    .auth-split { flex-direction: column; }
+    .auth-split-left { flex: none; padding: 2.5rem 2rem; min-height: auto; }
+    .split-left-title { font-size: 1.5rem; }
+    .split-perks { display: none; }
+    .auth-split-right { padding: 2.5rem 1.5rem; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-split">
+  <!-- Left: branding panel -->
+  <div class="auth-split-left d-none d-md-flex">
+    <div class="split-left-logo"><i class="bi bi-link-45deg"></i></div>
+    <h2 class="split-left-title">Join CUlink<br>today.</h2>
+    <p class="split-left-desc">Connect with students across Cebu universities — chat, share, and convert files all in one platform.</p>
+    <div class="split-perks">
+      <div class="split-perk">
+        <div class="split-perk-icon"><i class="bi bi-chat-dots-fill"></i></div>
+        Real-time private messaging
+      </div>
+      <div class="split-perk">
+        <div class="split-perk-icon"><i class="bi bi-newspaper"></i></div>
+        Shared knowledge wall
+      </div>
+      <div class="split-perk">
+        <div class="split-perk-icon"><i class="bi bi-shield-lock-fill"></i></div>
+        Private file conversion
+      </div>
+      <div class="split-perk">
+        <div class="split-perk-icon"><i class="bi bi-infinity"></i></div>
+        Always free
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: form -->
+  <div class="auth-split-right">
+    <div class="auth-form-box">
+      <h1>Create account</h1>
+      <p class="sub">Already have one? <a href="{% url 'login' %}">Sign in</a></p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-person me-1"></i>Username</label>
+          {{ form.username }}
+          {% if form.username.errors %}
+          <div class="field-error">{% for e in form.username.errors %}{{ e }}{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-envelope me-1"></i>Email Address</label>
+          {{ form.email }}
+          {% if form.email.errors %}
+          <div class="field-error">{% for e in form.email.errors %}{{ e }}{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label"><i class="bi bi-lock me-1"></i>Password</label>
+          {{ form.password1 }}
+          {% if form.password1.errors %}
+          <div class="field-error">{% for e in form.password1.errors %}{{ e }}{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label"><i class="bi bi-lock-fill me-1"></i>Confirm Password</label>
+          {{ form.password2 }}
+          {% if form.password2.errors %}
+          <div class="field-error">{% for e in form.password2.errors %}{{ e }}{% endfor %}</div>
+          {% endif %}
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger mb-3">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+        {% endif %}
+
+        <button type="submit" class="btn-primary-grad w-100" style="justify-content:center; font-size:1rem; padding:0.9rem;">
+          <i class="bi bi-person-plus-fill"></i> Create Account
+        </button>
+      </form>
+
+      <p style="text-align:center; margin-top:1.25rem; font-size:0.78rem; color:var(--text-light);">
+        A verification email will be sent after registration.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
